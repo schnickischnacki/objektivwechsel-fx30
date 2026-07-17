@@ -1,4 +1,4 @@
-const KEY = "objektivwechsel-fx30:v1";
+const KEY = "objektivwechsel-fx30:v2";
 
 export type BestResult = {
   errors: number;

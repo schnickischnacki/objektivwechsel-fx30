@@ -1,13 +1,15 @@
-# Objektivwechsel FX30 – Übungswidget
+# Objektivwechsel FX30 – virtuelle Übung
 
-Standalone-React-Widget für den Moodle-Kurs zur Kamerascheinprüfung (HS Ansbach).
-Es übt den Objektivwechsel an der Sony FX30 als **Sequenzaufgabe**: 13 Schritte in der
-richtigen Reihenfolge, drei Fallen dazwischen, sofortige visuelle Rückmeldung an einer
-schematischen Set-Szene.
+Standalone-Web-App für den Moodle-Kurs zur Kamerascheinprüfung (HS Ansbach).
+Sie lässt den **Objektivwechsel an der Sony FX30 virtuell hands-on durchspielen**:
+Man handelt direkt an einer animierten Szene (Schalter, Sonnenblende, Release,
+Objektive, Deckel), statt Textzeilen zu sortieren. In den Ablauf sind drei kurze
+Mikro-Checks eingewoben, die das „Warum" abrufen (Testing-Effekt).
 
-Abrufbasiert statt Wiedererkennen: Die Aktionsliste enthält alle 13 richtigen Schritte
-plus drei Fallen in zufälliger Reihenfolge – wer die Reihenfolge nicht kann, sieht das
-sofort.
+Fehlhandlungen (Kamera nach oben neigen, Sensor berühren, bei laufender Kamera
+öffnen) sind echte, wählbare Handlungen in der Szene. Sie zeigen kurz die ehrliche
+Konsequenz, werden dann zurückgenommen – **kein harter Neustart**. Am Ende fasst
+der Abschlussscreen die Ausrutscher zusammen.
 
 ## Setup
 
@@ -19,64 +21,56 @@ npm run build   # Produktionsbuild
 
 ## Deploy
 
-Vercel-Import ohne Env-Variablen: Repo importieren, Framework-Preset „Next.js" bestätigen,
-deployen – es gibt kein Backend, keine Secrets, keine Datenbank.
+Vercel deployt automatisch bei jedem Push auf `main` (bestehendes Projekt, keine
+Env-Variablen). Redeploy prüfen: Vercel-Dashboard → Projekt → „Deployments" –
+der oberste Eintrag muss den letzten Commit-Hash tragen.
 
-## Einbau in Moodle
+## Einbindung in Moodle: per Link, kein iframe
 
-Text- und Medien-Feld anlegen, Editor auf Quellcode umschalten, einfügen und
-`DEINE-URL.vercel.app` ersetzen:
+Die App wird als **Link/Button auf der Kursseite** hinterlegt (Text- und
+Medien-Feld, Editor auf Quellcode umschalten, URL ersetzen):
 
 ```html
-<iframe
-  src="https://DEINE-URL.vercel.app"
-  title="Übung: Objektivwechsel an der Sony FX30"
-  width="100%"
-  height="780"
-  style="border:1px solid #e4dfd7;border-radius:14px;"
-  loading="lazy"
-  sandbox="allow-scripts allow-same-origin"
-></iframe>
+<a href="https://DEINE-URL.vercel.app"
+   target="_blank" rel="noopener"
+   style="display:inline-flex;align-items:center;gap:10px;padding:14px 22px;background:#c1651f;color:#ffffff;border-radius:10px;text-decoration:none;font-weight:700;">
+  Objektivwechsel virtuell üben &rarr;
+</a>
 ```
 
-`allow-same-origin` wird für den `localStorage`-Bestwert gebraucht. Ohne das Attribut
-läuft das Widget trotzdem, merkt sich aber nichts.
-
-Bei Erfolg schickt das Widget zusätzlich
-`postMessage({type:'objektivwechsel:done', errors:n})` an das Parent-Fenster – falls der
-Aktivitätsabschluss in Moodle später daran gehängt werden soll. Ohne Empfänger passiert
-schlicht nichts.
+Kein iframe, kein postMessage – die App steht für sich und ist ab 320 px Breite
+voll bedienbar (Touch und Tastatur).
 
 ## Wo pflege ich was
 
 | Was | Wo |
 | --- | --- |
-| Formulierungen der 16 Aktionen, Feedbacktexte, Reihenfolge, Toleranzgruppen | `data/actions.ts` |
-| Regeln (was ist als Nächstes gültig, Reset, Fehlerzähler) | `lib/engine.ts` |
-| Die SVG-Szene und ihre Zustände | `components/SetScene.tsx` |
-| Farben und Schriften (Tokens der Moodle-Inline-Seiten) | `app/globals.css` |
+| Situationen, Mikro-Check-Fragen, Feedback- und Konsequenztexte, Toleranzen | `data/beats.ts` |
+| Ablauf-/Konsequenz-Logik (rein, unit-testbar) | `lib/engine.ts` |
+| Szene (SVG, Zoom, anfassbare Stellen) | `components/Stage.tsx` |
+| Bestwert (`localStorage`, Key `objektivwechsel-fx30:v2`) | `lib/storage.ts` |
+| Farben/Schriften (Tokens der Moodle-Inline-Seiten) | `app/globals.css` |
 
-Der Originalwortlaut der alten Kursseite steht in `data/actions.ts` als Kommentar über
-jedem Schritt – die Button-Labels sind nur gekürzt, inhaltlich nicht verändert.
+Der Originalwortlaut der alten Kursseite steht in `data/beats.ts` als Kommentar
+über jeder Situation; UI-Texte kürzen nur, sie ändern nichts Inhaltliches.
 
 ## Fachliche Grundlage
 
 Alle Sachinhalte stammen 1:1 aus der alten Moodle-Kursseite
 „Objektiv wechseln (FX30)" (`Old Moodle Kurs/6_Kamera vorbereiten/Objektiv wechseln.html`).
-Die 13 Schritte und ihre Reihenfolge wurden gegen diese Quelle geprüft.
 
-**Reihenfolge-Toleranz** (bewusst gesetzt, nicht aus der Quelle abgeleitet):
-Schritte 3 und 4 (Sonnenblende ab / vorderen Deckel zu) sowie 11, 12 und 13
-(altes Objektiv verschließen / Sonnenblende dran / vorderen Deckel ab) sind
-untereinander in beliebiger Reihenfolge gültig. Alle anderen Schritte sind strikt
-sequenziell.
+**Reihenfolge-Toleranz** (bewusst gesetzt): Schritte 3/4 (Sonnenblende ab /
+vorderen Deckel zu) und 11/12/13 (Aufräumschritte) sind untereinander frei,
+alles andere strikt sequenziell. Die App erzwingt die Phasenfolge, nicht die
+Detailreihenfolge innerhalb einer Phase.
 
 ## Bekannte offene Punkte
 
-- Die drei Fallen stammen aus der Prompt-Vorgabe, nicht wörtlich aus der alten
-  Kursseite. Der Sensor-Reinigungspreis („rund 300 € beim Verleih") ist eine Angabe aus
-  der Kursbesprechung – vor dem Livegang mit Leuthner gegenklären.
-- Die Szene bleibt am Ende in der nach unten geneigten Haltung. Die Quelle sagt nichts
-  über ein Zurückneigen, deshalb wurde nichts erfunden.
-- Kein xAPI/SCORM: Wenn der Aktivitätsabschluss in Moodle wirklich gesetzt werden soll,
-  braucht es den `postMessage`-Empfänger auf der Kursseite.
+- Die drei Fehlhandlungen stammen aus der Konzeptvorgabe, nicht wörtlich aus der
+  alten Kursseite. Der Sensor-Reinigungspreis („rund 300 € beim Verleih") ist eine
+  Angabe aus der Kursbesprechung – vor dem Studierenden-Einsatz mit Michael
+  gegenklären.
+- Die Szene bleibt am Ende in der nach unten geneigten Haltung. Die Quelle sagt
+  nichts über ein Zurückneigen, deshalb wurde nichts erfunden.
+- Alte Listen-Version: als Git-Tag `v1-listen-sortierung` und physisch unter
+  `../Backups/objektivwechsel-fx30_v1_listen-sortierung_2026-07-17/` gesichert.

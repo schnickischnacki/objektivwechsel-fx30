@@ -61,6 +61,22 @@ body {
   border-radius: 8px;
 }
 
+/*
+ * Anfassbare Stellen in der Szene. Bewusst identisch für richtige Griffe, Fallen
+ * und Korrekturen: Die Markierung sagt „hier kannst du handeln", nicht „das ist
+ * richtig". Sonst wäre die Entscheidung geschenkt.
+ */
+.hotspot {
+  outline: none;
+  /* Dauerhaft sichtbar – auf Touch gibt es kein Hover. */
+  filter: drop-shadow(0 0 3px rgba(30, 37, 48, 0.6));
+  transition: filter 140ms ease;
+}
+.hotspot:hover,
+.hotspot:focus-visible {
+  filter: drop-shadow(0 0 7px rgba(193, 101, 31, 1));
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

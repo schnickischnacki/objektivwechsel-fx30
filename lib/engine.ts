@@ -1,113 +1,177 @@
-import { type Action, MAX_ERRORS, TOTAL_STEPS, actions } from "@/data/actions";
+import {
+  TOTAL_BEATS,
+  beats,
+  initialScene,
+  type Beat,
+  type HotspotId,
+  type SceneState,
+  type TrapId,
+  trapText,
+} from "@/data/beats";
 
-export type Verdict =
-  | { type: "ok"; action: Action }
-  | { type: "too-early"; action: Action }
-  | { type: "trap"; action: Action };
+export type Slip = { trap: TrapId; text: string };
 
 export type GameState = {
-  /** ids der bereits korrekt ausgeführten Schritte, in Klickreihenfolge */
-  done: string[];
-  errors: number;
-  /** Reihenfolge der Aktionen in der Liste (ids), einmal pro Runde gemischt */
-  pool: string[];
+  beatIndex: number;
+  /** Hotspots der in dieser Situation bereits erledigten Griffe */
+  hit: HotspotId[];
+  scene: SceneState;
+  /** Ausrutscher (F1–F3): ehrliche Konsequenz, dann geht es korrigiert weiter. */
+  slips: Slip[];
   startedAt: number | null;
   finishedAt: number | null;
 };
 
-export function byId(id: string): Action | undefined {
-  return actions.find((a) => a.id === id);
-}
-
-/**
- * Fisher-Yates. Nimmt eine rng, damit der erste Render deterministisch sein kann
- * (Hydration) und erst im Client gemischt wird.
- */
-export function shuffle<T>(items: T[], rng: () => number = Math.random): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
+export type Reaction =
+  | { type: "ok"; text: string; beatDone: boolean }
+  | { type: "correction"; text: string }
+  /** consequence: Szenenzustand, der die Folge kurz zeigt, bevor zurückgenommen wird */
+  | { type: "trap"; trap: TrapId; text: string; consequence: SceneState }
+  | { type: "idle" };
 
 export function initialState(): GameState {
   return {
-    done: [],
-    errors: 0,
-    pool: actions.map((a) => a.id),
+    beatIndex: 0,
+    hit: [],
+    scene: initialScene,
+    slips: [],
     startedAt: null,
     finishedAt: null,
   };
 }
 
-export function newRound(): GameState {
-  return { ...initialState(), pool: shuffle(actions.map((a) => a.id)) };
+export function currentBeat(s: GameState): Beat | undefined {
+  return beats[s.beatIndex];
+}
+
+export function isSolved(s: GameState): boolean {
+  return s.beatIndex >= TOTAL_BEATS;
 }
 
 /**
- * Toleranzgruppen: Schritte mit derselben orderGroup dürfen untereinander in
- * beliebiger Reihenfolge kommen (3/4 und 11/12/13). Eine Gruppe muss vollständig
- * abgearbeitet sein, bevor die nächste Gruppe an die Reihe kommt.
+ * Welche Hotspots sind in dieser Situation gerade anfassbar?
+ * Bei `ordered` ist immer nur der nächste Griff dran – die anderen wären physisch
+ * gar nicht möglich (man dreht nicht, bevor der Release gedrückt ist).
  */
-export function isNextValid(state: GameState, action: Action): boolean {
-  if (action.kind !== "step" || action.orderGroup == null) return false;
-  if (state.done.includes(action.id)) return false;
-
-  const openGroups = actions
-    .filter((a) => a.kind === "step" && !state.done.includes(a.id))
-    .map((a) => a.orderGroup as number);
-  const currentGroup = Math.min(...openGroups);
-
-  return action.orderGroup === currentGroup;
+export function activeTargets(s: GameState) {
+  const beat = currentBeat(s);
+  if (!beat || beat.kind !== "grip") return [];
+  const open = beat.targets.filter((t) => !s.hit.includes(t.hotspot));
+  return beat.ordered ? open.slice(0, 1) : open;
 }
 
-export function evaluate(state: GameState, action: Action): Verdict {
-  if (action.kind === "trap") return { type: "trap", action };
-  return isNextValid(state, action)
-    ? { type: "ok", action }
-    : { type: "too-early", action };
+/** Alles, was in dieser Situation auf einen Klick reagiert (Griffe, Fehlhandlungen, Korrekturen). */
+export function liveHotspots(s: GameState): HotspotId[] {
+  const beat = currentBeat(s);
+  if (!beat) return [];
+  const ids: HotspotId[] = [
+    ...activeTargets(s).map((t) => t.hotspot),
+    ...(beat.traps ?? []).map((t) => t.hotspot),
+    ...(beat.corrections ?? []).map((c) => c.hotspot),
+  ];
+  return [...new Set(ids)];
 }
 
-export function applyVerdict(state: GameState, verdict: Verdict): GameState {
-  const now = Date.now();
-  const startedAt = state.startedAt ?? now;
-
-  switch (verdict.type) {
-    case "ok": {
-      const done = [...state.done, verdict.action.id];
-      const finished = done.length === TOTAL_STEPS;
-      return {
-        ...state,
-        done,
-        startedAt,
-        finishedAt: finished ? now : null,
-      };
-    }
-    case "trap":
-      return { ...state, errors: state.errors + 1, startedAt };
-    case "too-early":
-      return { ...state, startedAt };
+/** Wie die Szene eine Fehlhandlung kurz zeigt, bevor sie zurückgenommen wird. */
+function consequenceScene(scene: SceneState, trap: TrapId): SceneState {
+  switch (trap) {
+    case "F1":
+      return { ...scene, tilt: "up" };
+    case "F3":
+      return { ...scene, power: "on" };
+    case "F2":
+      return scene;
   }
 }
 
-export function isBusted(state: GameState): boolean {
-  return state.errors >= MAX_ERRORS;
+export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
+  const beat = currentBeat(s);
+  if (!beat || beat.kind !== "grip") return [s, { type: "idle" }];
+
+  const startedAt = s.startedAt ?? Date.now();
+
+  const trap = (beat.traps ?? []).find((t) => t.hotspot === hotspot);
+  if (trap) {
+    // Konsequenz zeigen, Handlung zurücknehmen – die Szene selbst bleibt unverändert.
+    return [
+      { ...s, slips: [...s.slips, { trap: trap.trap, text: trapText[trap.trap] }], startedAt },
+      {
+        type: "trap",
+        trap: trap.trap,
+        text: trapText[trap.trap],
+        consequence: consequenceScene(s.scene, trap.trap),
+      },
+    ];
+  }
+
+  const target = activeTargets(s).find((t) => t.hotspot === hotspot);
+  if (target) {
+    const hit = [...s.hit, hotspot];
+    const beatDone = hit.length === beat.targets.length;
+    const next: GameState = {
+      ...s,
+      hit: beatDone ? [] : hit,
+      beatIndex: beatDone ? s.beatIndex + 1 : s.beatIndex,
+      scene: target.apply(s.scene),
+      startedAt,
+      finishedAt:
+        beatDone && s.beatIndex + 1 >= TOTAL_BEATS ? Date.now() : s.finishedAt,
+    };
+    return [next, { type: "ok", text: target.why, beatDone }];
+  }
+
+  const correction = (beat.corrections ?? []).find((c) => c.hotspot === hotspot);
+  if (correction) {
+    return [{ ...s, startedAt }, { type: "correction", text: correction.text }];
+  }
+
+  return [s, { type: "idle" }];
 }
 
-export function isSolved(state: GameState): boolean {
-  return state.done.length === TOTAL_STEPS;
+export function choose(s: GameState, optionIndex: number): [GameState, Reaction] {
+  const beat = currentBeat(s);
+  if (!beat || beat.kind !== "choice") return [s, { type: "idle" }];
+
+  const option = beat.options[optionIndex];
+  if (!option) return [s, { type: "idle" }];
+
+  const startedAt = s.startedAt ?? Date.now();
+
+  if (option.verdict === "trap" && option.trap) {
+    return [
+      {
+        ...s,
+        slips: [...s.slips, { trap: option.trap, text: option.text }],
+        startedAt,
+      },
+      {
+        type: "trap",
+        trap: option.trap,
+        text: option.text,
+        consequence: option.preview(s.scene),
+      },
+    ];
+  }
+
+  if (option.verdict === "soft") {
+    return [{ ...s, startedAt }, { type: "correction", text: option.text }];
+  }
+
+  const beatIndex = s.beatIndex + 1;
+  return [
+    {
+      ...s,
+      beatIndex,
+      hit: [],
+      scene: option.preview(s.scene),
+      startedAt,
+      finishedAt: beatIndex >= TOTAL_BEATS ? Date.now() : s.finishedAt,
+    },
+    { type: "ok", text: option.text, beatDone: true },
+  ];
 }
 
-/** Aktionen, die aktuell in der Liste stehen: alle bis auf die erledigten Schritte. */
-export function visibleActions(state: GameState): Action[] {
-  return state.pool
-    .map((id) => byId(id))
-    .filter((a): a is Action => a != null && !state.done.includes(a.id));
-}
-
-export function elapsedSeconds(state: GameState): number | null {
-  if (state.startedAt == null || state.finishedAt == null) return null;
-  return Math.round((state.finishedAt - state.startedAt) / 1000);
+export function elapsedSeconds(s: GameState): number | null {
+  if (s.startedAt == null || s.finishedAt == null) return null;
+  return Math.round((s.finishedAt - s.startedAt) / 1000);
 }

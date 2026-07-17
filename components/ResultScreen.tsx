@@ -1,27 +1,27 @@
 "use client";
 
 import { motion } from "motion/react";
+import type { Slip } from "@/lib/engine";
 import type { BestResult } from "@/lib/storage";
 
 export default function ResultScreen({
-  errors,
+  slips,
   seconds,
   best,
   onAgain,
-  onDone,
 }: {
-  errors: number;
+  slips: Slip[];
   seconds: number | null;
   best: BestResult | null;
   onAgain: () => void;
-  onDone: () => void;
 }) {
+  const clean = slips.length === 0;
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="overflow-hidden rounded-xl border border-line bg-white"
+      className="overflow-hidden rounded-2xl border border-line bg-white"
     >
       <div
         aria-hidden
@@ -32,43 +32,53 @@ export default function ResultScreen({
         }}
       />
       <div className="p-6">
-        <h2 className="mb-2 text-xl font-semibold">Objektiv gewechselt.</h2>
-        <p className="mb-5 text-[0.95rem] text-text-muted">
-          Alle 13 Schritte in einer Reihenfolge, die der Sensor überlebt. Genau dieser
-          Ablauf wird in der Prüfung von dir erwartet.
+        <h2 className="mb-2 text-xl font-semibold">
+          {clean ? "Sauberer Durchlauf." : "Objektiv gewechselt."}
+        </h2>
+        <p className="mb-5 max-w-[58ch] text-[0.95rem] text-text-muted">
+          {clean
+            ? "Alle Handgriffe gesessen, der Sensor blieb außer Gefahr. Genau so sieht es in der Prüfung aus."
+            : "Der Wechsel ist geschafft – unten steht, wo es gehakt hat. Ein zweiter Durchlauf lohnt sich, bis er sauber ist."}
         </p>
 
-        <dl className="mb-6 flex flex-wrap gap-3">
-          <Stat label="Fehlversuche" value={String(errors)} />
+        <dl className="mb-5 flex flex-wrap gap-3">
+          <Stat label="Ausrutscher" value={String(slips.length)} />
           {seconds != null && <Stat label="Zeit" value={`${seconds} s`} />}
           {best != null && (
             <Stat
               label="Dein bisher bester Lauf"
               value={
                 best.seconds != null
-                  ? `${best.errors} Fehler · ${best.seconds} s`
-                  : `${best.errors} Fehler`
+                  ? `${best.errors} Ausrutscher · ${best.seconds} s`
+                  : `${best.errors} Ausrutscher`
               }
             />
           )}
         </dl>
 
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={onAgain}
-            className="min-h-[44px] rounded-lg bg-accent px-5 text-base font-bold text-white transition-opacity hover:opacity-90"
-          >
-            Nochmal
-          </button>
-          <button
-            type="button"
-            onClick={onDone}
-            className="min-h-[44px] rounded-lg border border-line bg-white px-5 text-base font-semibold transition-colors hover:bg-cream-warm"
-          >
-            Fertig
-          </button>
-        </div>
+        {!clean && (
+          <div className="mb-6 rounded-xl border border-line bg-cream p-4">
+            <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
+              Wo es gehakt hat
+            </p>
+            <ul className="grid gap-1.5">
+              {[...new Set(slips.map((s) => s.text))].map((text) => (
+                <li key={text} className="flex gap-2 text-sm text-text">
+                  <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={onAgain}
+          className="min-h-[48px] rounded-full bg-accent px-6 text-base font-bold text-white transition-opacity hover:opacity-90"
+        >
+          Nochmal wechseln
+        </button>
       </div>
     </motion.div>
   );
@@ -76,7 +86,7 @@ export default function ResultScreen({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex-1 basis-40 rounded-lg border border-line bg-cream p-3">
+    <div className="flex-1 basis-40 rounded-xl border border-line bg-cream p-3">
       <dt className="text-[0.72rem] uppercase tracking-[0.1em] text-text-muted">
         {label}
       </dt>
