@@ -10,7 +10,7 @@ const TILT = { up: -15, level: 0, down: 15 };
 
 const MOUNT = { x: 332, y: 210 };
 const LENS_AT = { x: 387, y: 210 };
-const HOOD_AT = { x: 462, y: 210 };
+const HOOD_AT = { x: 480, y: 210 };
 const CAP_FRONT_AT = { x: 449, y: 210 };
 
 const SAFE_SPARE = { x: 610, y: 160 };
@@ -282,6 +282,7 @@ export default function Stage({
             label="Sonnenblende"
             hint={{ cx: 0, cy: 0, rx: 26, ry: 54 }}
           >
+            <rect x="-20" y="-56" width="40" height="112" fill="transparent" />
             <path d="M -14 -42 L 14 -54 L 14 54 L -14 42 Z" fill="#2b3543" />
           </Hotspot>
         </Piece>
@@ -395,7 +396,7 @@ function Lens({
 function Cap({ label }: { label: string }) {
   return (
     <g>
-      <circle cx="0" cy="0" r="34" fill="transparent" />
+      <circle cx="0" cy="0" r="26" fill="transparent" />
       <ellipse cx="2" cy="0" rx="13" ry="40" fill="#8f4715" />
       <ellipse cx="-1" cy="0" rx="12" ry="38" fill="#c1651f" />
       <rect x="-5" y="-22" width="9" height="7" rx="3.5" fill="#8f4715" opacity="0.75" />
@@ -454,7 +455,10 @@ function Hotspot({
   hint?: Hint;
   children: React.ReactNode;
 }) {
-  if (!live) return <g>{children}</g>;
+  // Nicht aktiv = komplett klickdurchlässig. Sonst fangen die unsichtbaren
+  // Touch-Flächen (fill="transparent") Klicks ab und blockieren Elemente,
+  // die darunter liegen – etwa die Sonnenblende hinter dem geschlossenen Deckel.
+  if (!live) return <g style={{ pointerEvents: "none" }}>{children}</g>;
   return (
     <g
       role="button"
