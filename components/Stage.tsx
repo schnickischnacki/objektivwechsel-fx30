@@ -18,10 +18,10 @@ const SAFE_OLD = { x: 610, y: 245 };
 const LOOSE = { x: 470, y: 100 };
 
 const TRAY = {
-  hood: { x: 215, y: 352 },
-  frontCapOld: { x: 296, y: 352 },
-  rearCapSpare: { x: 362, y: 352 },
-  frontCapSpare: { x: 428, y: 352 },
+  hood: { x: 215, y: 340 },
+  frontCapOld: { x: 296, y: 340 },
+  rearCapSpare: { x: 362, y: 340 },
+  frontCapSpare: { x: 428, y: 340 },
 };
 
 type Pose = { x: number; y: number; rotate: number };
@@ -135,8 +135,8 @@ export default function Stage({
         <line x1="0" y1="300" x2={VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
 
         {/* Ablage-Zone für lose Teile */}
-        <rect x="150" y="312" width="330" height="80" rx="10" fill="#f1e2d0" opacity="0.6" />
-        <text x="164" y="332" fill="#a99a86" fontSize="11" letterSpacing="1.6">
+        <rect x="150" y="302" width="330" height="78" rx="10" fill="#f1e2d0" opacity="0.6" />
+        <text x="164" y="322" fill="#a99a86" fontSize="11" letterSpacing="1.6">
           ABLAGE
         </text>
 
@@ -327,10 +327,10 @@ export default function Stage({
         {(live.includes("rotate-ccw") || live.includes("rotate-cw")) && (
           <g>
             {live.includes("rotate-ccw") && (
-              <RotateGrip id="rotate-ccw" dir="ccw" onGrip={onGrip} x={LENS_AT.x - 6} y={104} />
+              <RotateGrip id="rotate-ccw" dir="ccw" onGrip={onGrip} x={278} y={96} />
             )}
             {live.includes("rotate-cw") && (
-              <RotateGrip id="rotate-cw" dir="cw" onGrip={onGrip} x={LENS_AT.x + 62} y={104} />
+              <RotateGrip id="rotate-cw" dir="cw" onGrip={onGrip} x={452} y={96} />
             )}
           </g>
         )}
@@ -388,12 +388,19 @@ function Lens({
   );
 }
 
+/**
+ * Objektivdeckel als plastische Kappe: dunkler Rand hinten, hellere Fläche vorn,
+ * zwei Griffmulden. Flache Ovale waren im Test nicht als Deckel erkennbar.
+ */
 function Cap({ label }: { label: string }) {
   return (
     <g>
       <circle cx="0" cy="0" r="34" fill="transparent" />
-      <ellipse cx="0" cy="0" rx="10" ry="40" fill="#c1651f" />
-      <text x="0" y="5" textAnchor="middle" fill="#fbeada" fontSize="14" fontWeight="700">
+      <ellipse cx="2" cy="0" rx="13" ry="40" fill="#8f4715" />
+      <ellipse cx="-1" cy="0" rx="12" ry="38" fill="#c1651f" />
+      <rect x="-5" y="-22" width="9" height="7" rx="3.5" fill="#8f4715" opacity="0.75" />
+      <rect x="-5" y="15" width="9" height="7" rx="3.5" fill="#8f4715" opacity="0.75" />
+      <text x="-1" y="5" textAnchor="middle" fill="#fbeada" fontSize="13" fontWeight="700">
         {label}
       </text>
     </g>
@@ -468,6 +475,10 @@ function Hotspot({
   );
 }
 
+/**
+ * Dreh-Schaltfläche mit Klartext. Ein bloßes Kreispfeil-Icon war im Test nicht
+ * eindeutig als „links" oder „rechts" lesbar – deshalb Text plus Pfeil.
+ */
 function RotateGrip({
   id,
   dir,
@@ -481,12 +492,18 @@ function RotateGrip({
   x: number;
   y: number;
 }) {
-  const flip = dir === "ccw" ? -1 : 1;
+  const W = 154;
+  const H = 44;
+  const text = dir === "ccw" ? "nach links" : "nach rechts";
   return (
     <g
       role="button"
       tabIndex={0}
-      aria-label={dir === "ccw" ? "Gegen den Uhrzeigersinn drehen" : "Im Uhrzeigersinn drehen"}
+      aria-label={
+        dir === "ccw"
+          ? "Objektiv nach links drehen (gegen den Uhrzeigersinn)"
+          : "Objektiv nach rechts drehen (im Uhrzeigersinn)"
+      }
       className="hotspot cursor-pointer"
       onClick={() => onGrip(id)}
       onKeyDown={(e) => {
@@ -497,27 +514,44 @@ function RotateGrip({
       }}
       transform={`translate(${x},${y})`}
     >
-      <circle r="32" fill="transparent" />
-      <motion.circle
-        r="26"
+      <motion.rect
+        x={-W / 2}
+        y={-H / 2}
+        width={W}
+        height={H}
+        rx={H / 2}
         fill="none"
         stroke="#c1651f"
         strokeWidth={2.5}
-        initial={{ r: 26, opacity: 0.5 }}
-        animate={{ r: 37, opacity: 0 }}
+        initial={{ opacity: 0.5, scale: 1 }}
+        animate={{ opacity: 0, scale: 1.14 }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+        style={{ transformBox: "fill-box", transformOrigin: "center" }}
       />
-      <circle r="24" fill="#ffffff" stroke="#c1651f" strokeWidth="2.5" />
-      <g transform={`scale(${flip},1)`}>
+      <rect
+        x={-W / 2}
+        y={-H / 2}
+        width={W}
+        height={H}
+        rx={H / 2}
+        fill="#ffffff"
+        stroke="#c1651f"
+        strokeWidth="2.5"
+      />
+      {/* Rotationspfeil: im Uhrzeigersinn gezeichnet, für „links" gespiegelt */}
+      <g transform={`translate(${-W / 2 + 26},0) scale(${dir === "ccw" ? -1 : 1},1)`}>
         <path
-          d="M -9 3 A 9 9 0 1 1 3 10"
+          d="M -7.7 5.6 A 9.5 9.5 0 1 1 7.7 5.6"
           fill="none"
           stroke="#c1651f"
           strokeWidth="3"
           strokeLinecap="round"
         />
-        <path d="M -9 3 l -4 -6 l 8 -1 z" fill="#c1651f" />
+        <path d="M 7.7 5.6 l 6.4 -2.4 l -2.6 8 z" fill="#c1651f" />
       </g>
+      <text x={20} y={6} textAnchor="middle" fontSize="15" fontWeight="700" fill="#c1651f">
+        {text}
+      </text>
     </g>
   );
 }

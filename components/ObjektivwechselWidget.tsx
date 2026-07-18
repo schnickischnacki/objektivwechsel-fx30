@@ -7,6 +7,7 @@ import Stage from "@/components/Stage";
 import {
   TOTAL_BEATS,
   beats,
+  intro,
   type HotspotId,
   type SceneState,
 } from "@/data/beats";
@@ -32,6 +33,7 @@ export default function ObjektivwechselWidget() {
   const [preview, setPreview] = useState<SceneState | null>(null);
   const [consequence, setConsequence] = useState<SceneState | null>(null);
   const [best, setBest] = useState<BestResult | null>(null);
+  const [started, setStarted] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // localStorage gibt es erst im Client – deshalb nach der Hydration laden.
@@ -99,6 +101,63 @@ export default function ObjektivwechselWidget() {
 
   const shownScene = consequence ?? preview ?? state.scene;
   const shownFocus = beat?.focus ?? { x: 430, y: 220, scale: 1.05 };
+
+  // Startkarte: worum es geht und warum der Wechsel heikel ist.
+  if (!started) {
+    return (
+      <main className="mx-auto flex min-h-[100dvh] max-w-[680px] items-center justify-center p-3 sm:p-6">
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="w-full overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-card)]"
+        >
+          <div
+            aria-hidden
+            className="h-2"
+            style={{
+              background:
+                "repeating-linear-gradient(135deg,#c1651f 0 18px,#1e2530 18px 30px)",
+            }}
+          />
+          <div className="p-5 sm:p-8">
+            <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-accent">
+              {intro.kicker}
+            </p>
+            <h1 className="mb-3 text-[1.35rem] font-semibold leading-tight tracking-tight sm:text-2xl">
+              {intro.title}
+            </h1>
+            <p className="mb-3 text-[0.95rem] leading-relaxed text-text sm:text-base">{intro.lead}</p>
+            <p className="mb-4 text-[0.9rem] leading-relaxed text-text-muted sm:text-[0.95rem]">
+              {intro.body}
+            </p>
+
+            <ul className="mb-4 grid gap-1.5 rounded-xl border border-line bg-cream p-3.5">
+              {intro.how.map((h) => (
+                <li key={h} className="flex gap-2.5 text-[0.87rem] text-text sm:text-[0.92rem]">
+                  <span aria-hidden className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  {h}
+                </li>
+              ))}
+            </ul>
+
+            <p className="mb-5 border-l-2 border-line pl-3 font-serif text-[0.88rem] italic text-text-muted sm:text-[0.95rem]">
+              „Der Sensor ist das Herz der Kamera. Wenn du ihn anfasst, hat er ein
+              Problem – und du gleich mit.“ – Peter Z.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setStarted(true)}
+              className="min-h-[52px] w-full rounded-full bg-accent px-6 text-base font-bold text-white transition-opacity hover:opacity-90 sm:w-auto"
+            >
+              {intro.cta}
+            </button>
+          </div>
+        </motion.section>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto grid max-w-[960px] gap-4 p-3 sm:p-5">

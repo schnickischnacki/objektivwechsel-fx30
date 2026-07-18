@@ -60,6 +60,13 @@ export function activeTargets(s: GameState) {
   return beat.ordered ? open.slice(0, 1) : open;
 }
 
+/** Korrekturen, die im aktuellen Szenenzustand überhaupt möglich sind. */
+function activeCorrections(s: GameState) {
+  const beat = currentBeat(s);
+  if (!beat) return [];
+  return (beat.corrections ?? []).filter((c) => !c.when || c.when(s.scene));
+}
+
 /** Alles, was in dieser Situation auf einen Klick reagiert (Griffe, Fehlhandlungen, Korrekturen). */
 export function liveHotspots(s: GameState): HotspotId[] {
   const beat = currentBeat(s);
@@ -67,7 +74,7 @@ export function liveHotspots(s: GameState): HotspotId[] {
   const ids: HotspotId[] = [
     ...activeTargets(s).map((t) => t.hotspot),
     ...(beat.traps ?? []).map((t) => t.hotspot),
-    ...(beat.corrections ?? []).map((c) => c.hotspot),
+    ...activeCorrections(s).map((c) => c.hotspot),
   ];
   return [...new Set(ids)];
 }
@@ -120,7 +127,7 @@ export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
     return [next, { type: "ok", text: target.why, beatDone }];
   }
 
-  const correction = (beat.corrections ?? []).find((c) => c.hotspot === hotspot);
+  const correction = activeCorrections(s).find((c) => c.hotspot === hotspot);
   if (correction) {
     return [{ ...s, startedAt }, { type: "correction", text: correction.text }];
   }

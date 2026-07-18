@@ -75,6 +75,8 @@ export type Target = {
 export type Correction = {
   hotspot: HotspotId;
   text: string;
+  /** Nur anfassbar, wenn das physisch überhaupt geht (z. B. drehen erst nach Entriegeln). */
+  when?: (s: SceneState) => boolean;
 };
 
 /** Die drei kanonischen Fehlhandlungen. Nur sie zählen als Ausrutscher. */
@@ -111,6 +113,20 @@ export type Beat =
   | (Common & { kind: "grip"; targets: Target[]; ordered?: boolean })
   | (Common & { kind: "choice"; question: string; options: Option[] });
 
+/** Startkarte vor der Übung: worum es geht und warum es heikel ist. */
+export const intro = {
+  kicker: "Bevor es losgeht",
+  title: "Objektiv wechseln, ohne den Sensor zu ruinieren",
+  lead: "Beim Wechsel steht der Body offen – dahinter liegt der Sensor frei. Ein Staubkorn oder Fingerabdruck darauf sieht man in jeder Aufnahme; die Reinigung kostet beim Verleih rund 300 €.",
+  body: "Deshalb hat der Wechsel eine feste Reihenfolge: vorbereiten, sichern, öffnen, zügig tauschen, aufräumen. Genau die sollst du in der Prüfung vorführen können.",
+  how: [
+    "Tippe die hervorgehobenen Stellen an der Werkbank an.",
+    "Nicht jede anfassbare Stelle ist eine gute Idee.",
+    "Zwischendurch kommen kurze Fragen – die stehen unter dem Bild.",
+  ],
+  cta: "Übung starten",
+};
+
 export const beats: Beat[] = [
   {
     kind: "grip",
@@ -133,6 +149,10 @@ export const beats: Beat[] = [
       {
         hotspot: "front-cap-spare",
         text: "Der vordere Deckel bleibt vorerst drauf – er schützt die Frontlinse, bis das Objektiv sitzt. Ganz zum Schluss kommt er ab.",
+      },
+      {
+        hotspot: "front-cap-old",
+        text: "Dieser Deckel gehört auf die Kamera, die gerade noch läuft – der kommt gleich dran. Erst ist das Wechselobjektiv an der Reihe.",
       },
     ],
   },
@@ -158,7 +178,7 @@ export const beats: Beat[] = [
     id: "freimachen",
     title: "Objektiv freimachen",
     prompt:
-      "Zwei Griffe, bevor du zugreifst – in beliebiger Reihenfolge: Das Objektiv muss anfassbar sein, die Frontlinse geschützt.",
+      "Zwei Handgriffe, in beliebiger Reihenfolge: Das Objektiv muss sich sicher greifen lassen, die Frontlinse geschützt sein.",
     focus: { x: 360, y: 205, scale: 1.1 },
     // Quelle 3: „Sonnenblende abnehmen (um das Objektiv sicher anfassen zu können)"
     // Quelle 4: „den vorderen Objektivdeckel schließen (um Fingerabdrücken vorzubeugen)"
@@ -212,30 +232,30 @@ export const beats: Beat[] = [
   {
     kind: "choice",
     id: "statuscheck",
-    title: "Kurzer Check",
-    prompt: "Der Verschluss geht gleich auf. Ein Blick auf die Kamera:",
-    question: "Wie steht sie da, bevor der Body geöffnet wird?",
+    title: "Gegencheck",
+    prompt: "Gleich löst du den Verschluss. Zwei Dinge müssen jetzt beide stimmen.",
+    question: "Welche beiden sind es?",
     focus: { x: 360, y: 205, scale: 1.05 },
     // Abruf zu Quelle 2/5 – kein neuer Sachinhalt.
     options: [
       {
-        label: "Aus, Öffnung nach unten – so bleibt sie",
+        label: "Kamera aus und Öffnung nach unten",
         preview: (s) => s,
         verdict: "ok",
-        text: "Genau. Ausgeschaltet seit dem zweiten Griff, Öffnung nach unten – jetzt darf der Body auf.",
+        text: "Genau diese beiden. Ausgeschaltet ist sie seit dem zweiten Griff, geneigt seit eben – jetzt darf der Body auf.",
       },
       {
-        label: "Sie könnte ruhig noch laufen – geht schneller",
+        label: "Nur die Neigung – laufen darf sie",
         preview: (s) => ({ ...s, power: "on" }),
         verdict: "trap",
         trap: "F3",
         text: trapText.F3,
       },
       {
-        label: "Egal, solange man zügig arbeitet",
-        preview: (s) => s,
+        label: "Nur ausschalten – die Neigung ist egal",
+        preview: (s) => ({ ...s, tilt: "level" }),
         verdict: "soft",
-        text: "Zügig ja – aber nicht statt der Sicherung. Kamera aus und Öffnung nach unten sind die Voraussetzung, das Tempo kommt obendrauf.",
+        text: "Ausschalten allein reicht nicht. Bei waagrechter oder aufwärts gerichteter Öffnung fällt Staub hinein – beides muss stimmen.",
       },
     ],
   },
@@ -258,15 +278,17 @@ export const beats: Beat[] = [
       },
       {
         hotspot: "rotate-ccw",
-        label: "Gegen den Uhrzeigersinn drehen",
-        why: "1/8 bis 1/4 Umdrehung gegen den Uhrzeigersinn – dann kommt das Objektiv heraus.",
+        label: "Nach links drehen",
+        why: "1/8 bis 1/4 Umdrehung nach links (gegen den Uhrzeigersinn) – dann kommt das Objektiv heraus.",
         apply: (s) => ({ ...s, oldLens: "loose", release: false }),
       },
     ],
     corrections: [
       {
         hotspot: "rotate-cw",
-        text: "Falsche Richtung. Im Uhrzeigersinn arretiert – gelöst wird gegen den Uhrzeigersinn.",
+        text: "Falsche Richtung: Nach rechts wird festgemacht, gelöst wird nach links.",
+        // Drehen geht erst, wenn der Release-Knopf gedrückt ist.
+        when: (s) => s.release,
       },
     ],
   },
@@ -337,8 +359,8 @@ export const beats: Beat[] = [
       },
       {
         hotspot: "rotate-cw",
-        label: "Im Uhrzeigersinn drehen",
-        why: "Eine 1/4 Umdrehung im Uhrzeigersinn, bis der Arretierungsknopf hörbar klickt.",
+        label: "Nach rechts drehen",
+        why: "Eine 1/4 Umdrehung nach rechts (im Uhrzeigersinn), bis es hörbar klickt und fest sitzt.",
         apply: (s) => ({ ...s, spareLens: "locked" }),
       },
     ],
@@ -346,7 +368,9 @@ export const beats: Beat[] = [
     corrections: [
       {
         hotspot: "rotate-ccw",
-        text: "Falsche Richtung – so würdest du es wieder lösen. Arretiert wird im Uhrzeigersinn.",
+        text: "Falsche Richtung – so löst du es wieder. Festgemacht wird nach rechts.",
+        // Drehen geht erst, wenn das Objektiv angesetzt ist.
+        when: (s) => s.spareLens !== "safe",
       },
     ],
   },
