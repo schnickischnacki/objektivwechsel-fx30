@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import type { HotspotId, SceneState } from "@/data/beats";
 
 /* Werkbank in SVG-Koordinaten. Alles hier ist schematisch, nicht maßstäblich. */
-const VIEW = { w: 720, h: 400 };
+const VIEW = { x: 130, y: 66, w: 585, h: 324 };
 const PIVOT = { x: 240, y: 210 };
 const TILT = { up: -15, level: 0, down: 15 };
 
@@ -63,10 +63,10 @@ export default function Stage({
   // Objekte halb aus dem Bild und wirken wie kaputte Interaktionsflächen.
   const halfW = VIEW.w / (2 * k);
   const halfH = VIEW.h / (2 * k);
-  const cx = Math.min(Math.max(focus.x, halfW), VIEW.w - halfW);
-  const cy = Math.min(Math.max(focus.y, halfH), VIEW.h - halfH);
-  const tx = VIEW.w / 2 - k * cx;
-  const ty = VIEW.h / 2 - k * cy;
+  const cx = Math.min(Math.max(focus.x, VIEW.x + halfW), VIEW.x + VIEW.w - halfW);
+  const cy = Math.min(Math.max(focus.y, VIEW.y + halfH), VIEW.y + VIEW.h - halfH);
+  const tx = VIEW.x + VIEW.w / 2 - k * cx;
+  const ty = VIEW.y + VIEW.h / 2 - k * cy;
 
 
   const oldLensPose: Pose =
@@ -111,7 +111,7 @@ export default function Stage({
 
   return (
     <svg
-      viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}
+      viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
       preserveAspectRatio="xMidYMid meet"
       className="mx-auto block max-h-[48vh] w-full touch-manipulation select-none"
       role="group"
@@ -119,7 +119,7 @@ export default function Stage({
     >
       {/* Flache Fläche (kein Gradient), damit der Rand links/rechts nahtlos in den
           gleichfarbigen Container-Hintergrund übergeht, wenn die Höhe begrenzt wird. */}
-      <rect x="0" y="0" width={VIEW.w} height={VIEW.h} fill="#fbeada" />
+      <rect x={VIEW.x} y={VIEW.y} width={VIEW.w} height={VIEW.h} fill="#fbeada" />
 
       {/* Zoom auf die Situation. Bewusst ohne motion: SVG-Transform-Origin muss
           gegen den viewBox-Ursprung rechnen (transformBox), sonst verrutscht alles. */}
@@ -132,7 +132,7 @@ export default function Stage({
         }}
       >
         {/* Werkbankkante */}
-        <line x1="0" y1="300" x2={VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
+        <line x1={VIEW.x} y1="300" x2={VIEW.x + VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
 
         {/* Ablage-Zone für lose Teile */}
         <rect x="150" y="302" width="330" height="78" rx="10" fill="#f1e2d0" opacity="0.6" />
@@ -152,7 +152,7 @@ export default function Stage({
           strokeWidth="2"
           strokeDasharray="7 5"
         />
-        <text x="611" y="128" textAnchor="middle" fill="#a99a86" fontSize="11" letterSpacing="1.4">
+        <text x="611" y="100" textAnchor="middle" fill="#a99a86" fontSize="11" letterSpacing="1.4">
           WECHSELOBJEKTIV
         </text>
 
@@ -538,16 +538,9 @@ function RotateGrip({
         stroke="#c1651f"
         strokeWidth="2.5"
       />
-      {/* Rotationspfeil: im Uhrzeigersinn gezeichnet, für „links" gespiegelt */}
-      <g transform={`translate(${-W / 2 + 26},0) scale(${dir === "ccw" ? -1 : 1},1)`}>
-        <path
-          d="M -7.7 5.6 A 9.5 9.5 0 1 1 7.7 5.6"
-          fill="none"
-          stroke="#c1651f"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <path d="M 7.7 5.6 l 6.4 -2.4 l -2.6 8 z" fill="#c1651f" />
+      {/* Rotations-Icon (rotate-left.png); für „nach rechts" gespiegelt */}
+      <g transform={`translate(${-W / 2 + 27},0) scale(${dir === "cw" ? -1 : 1},1)`}>
+        <image href="/rotate-left.png" x={-13} y={-13} width={26} height={26} />
       </g>
       <text x={20} y={6} textAnchor="middle" fontSize="15" fontWeight="700" fill="#c1651f">
         {text}

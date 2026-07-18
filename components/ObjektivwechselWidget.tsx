@@ -160,14 +160,14 @@ export default function ObjektivwechselWidget() {
   }
 
   return (
-    <main className="mx-auto grid max-w-[960px] gap-4 p-3 sm:p-5">
+    <main className="mx-auto grid max-w-[960px] gap-3 p-3 sm:p-4">
       {/* Kopf – schlank, die App steht für sich */}
-      <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">
+      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
           Objektivwechsel{" "}
           <span className="font-normal text-text-muted">· Sony FX30</span>
         </h1>
-        <p className="font-serif text-sm italic text-text-muted">
+        <p className="font-serif text-[0.8rem] italic text-text-muted sm:text-sm">
           „Der Sensor ist das Herz der Kamera. Wenn du ihn anfasst, hat er ein
           Problem – und du gleich mit.“ – Peter Z.
         </p>
@@ -211,10 +211,10 @@ export default function ObjektivwechselWidget() {
         <>
           {/* Situation */}
           <div>
-            <p className="mb-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent">
+            <p className="mb-0.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent">
               {beat?.title}
             </p>
-            <p className="max-w-[62ch] text-[1.05rem] leading-snug text-text">
+            <p className="max-w-[62ch] text-[1rem] leading-snug text-text">
               {beat?.prompt}
             </p>
           </div>
@@ -273,11 +273,11 @@ export default function ObjektivwechselWidget() {
           )}
 
           {/* Rückmeldung */}
-          <div aria-live="polite" className="min-h-[56px]">
+          <div aria-live="polite" className="min-h-[48px]">
             {reaction.type !== "idle" && (
               <p
                 className={[
-                  "rounded-xl border px-4 py-3 text-[0.95rem]",
+                  "rounded-xl border px-4 py-2.5 text-[0.93rem]",
                   reaction.type === "trap"
                     ? "border-danger bg-danger-bg font-semibold text-danger"
                     : reaction.type === "correction"

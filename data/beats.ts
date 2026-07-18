@@ -134,7 +134,7 @@ export const beats: Beat[] = [
     title: "Vorbereiten",
     prompt:
       "Das Wechselobjektiv liegt bereit – noch mit beiden Deckeln. Mach es startklar, bevor du die Kamera überhaupt anfasst.",
-    focus: { x: 360, y: 205, scale: 1.0 }, // Establishing: ganze Werkbank, nicht reingezoomt
+    focus: { x: 422, y: 228, scale: 1.0 }, // Establishing: ganze Werkbank, nicht reingezoomt
     // Quelle 1: „Wechselobjektiv vorbereiten: (nur) hintere Objektivdeckel entfernen
     // und Objektiv auf sicherer Fläche bereitstellen bzw einem Teammitglied in die Hand geben."
     targets: [
@@ -161,13 +161,13 @@ export const beats: Beat[] = [
     id: "sichern",
     title: "Kamera sichern",
     prompt: "Die FX30 läuft noch. Bevor irgendetwas am Bajonett passiert:",
-    focus: { x: 360, y: 205, scale: 1.1 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     // Quelle 2: „Kamera ausschalten"
     targets: [
       {
         hotspot: "power",
         label: "Kamera ausschalten",
-        why: "Der Body wird nie im laufenden Betrieb geöffnet.",
+        why: "Kamera ist aus – der Body wird nie im laufenden Betrieb geöffnet.",
         apply: (s) => ({ ...s, power: "off" }),
       },
     ],
@@ -179,20 +179,20 @@ export const beats: Beat[] = [
     title: "Objektiv freimachen",
     prompt:
       "Zwei Handgriffe, in beliebiger Reihenfolge: Das Objektiv muss sich sicher greifen lassen, die Frontlinse geschützt sein.",
-    focus: { x: 360, y: 205, scale: 1.1 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     // Quelle 3: „Sonnenblende abnehmen (um das Objektiv sicher anfassen zu können)"
     // Quelle 4: „den vorderen Objektivdeckel schließen (um Fingerabdrücken vorzubeugen)"
     targets: [
       {
         hotspot: "hood",
         label: "Sonnenblende abnehmen",
-        why: "Ohne Sonnenblende bekommst du das Objektiv sicher zu fassen.",
+        why: "Sonnenblende ab – so bekommst du das Objektiv sicher zu fassen.",
         apply: (s) => ({ ...s, hood: "tray" }),
       },
       {
         hotspot: "front-cap-old",
         label: "Vorderen Deckel schließen",
-        why: "Beugt Fingerabdrücken auf der Frontlinse vor.",
+        why: "Vorderer Deckel zu – das beugt Fingerabdrücken auf der Frontlinse vor.",
         apply: (s) => ({ ...s, frontCapOld: "on" }),
       },
     ],
@@ -204,7 +204,7 @@ export const beats: Beat[] = [
     prompt:
       "Gleich steht der Body offen. Was dann in ihn hineinfällt, bleibt auf dem Sensor.",
     question: "Wie hältst du die Kamera dabei?",
-    focus: { x: 360, y: 205, scale: 1.05 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     // Quelle 5: „Kamera eher nach unten keinesfalls aber nach oben neigen
     // (um zu vermeiden, dass Staub auf den Sensor fällt)"
     options: [
@@ -235,14 +235,14 @@ export const beats: Beat[] = [
     title: "Gegencheck",
     prompt: "Gleich löst du den Verschluss. Zwei Dinge müssen jetzt beide stimmen.",
     question: "Welche beiden sind es?",
-    focus: { x: 360, y: 205, scale: 1.05 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     // Abruf zu Quelle 2/5 – kein neuer Sachinhalt.
     options: [
       {
         label: "Kamera aus und Öffnung nach unten",
         preview: (s) => s,
         verdict: "ok",
-        text: "Genau diese beiden. Ausgeschaltet ist sie seit dem zweiten Griff, geneigt seit eben – jetzt darf der Body auf.",
+        text: "Genau diese beiden: Die Kamera ist aus, und die Öffnung zeigt nach unten. Jetzt darf der Body auf.",
       },
       {
         label: "Nur die Neigung – laufen darf sie",
@@ -265,7 +265,7 @@ export const beats: Beat[] = [
     title: "Objektiv abnehmen",
     prompt:
       "Kamera aus, Öffnung nach unten. Jetzt darf das Objektiv runter – zwei Griffe, die aufeinander folgen müssen.",
-    focus: { x: 360, y: 205, scale: 1.12 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     ordered: true,
     // Quelle 6: „Release knopf des Bajonettverschlusses am Kameragehäuse drücken"
     // Quelle 7: „ca 1/8 bis 1/4 Umdrehung nach links (gegen den Uhrzeigersinn) drehen und herausnehmen"
@@ -298,13 +298,13 @@ export const beats: Beat[] = [
     title: "Body offen",
     prompt:
       "Der Sensor liegt frei. Das teuerste Bauteil des Sets, ungeschützt – mach die Hände frei fürs Wechselobjektiv.",
-    focus: { x: 360, y: 205, scale: 1.12 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     // Quelle 8: „Auf sicherer Fläche abstellen oder Teammitglied in die Hand geben"
     targets: [
       {
         hotspot: "old-lens",
         label: "Altes Objektiv sicher ablegen",
-        why: "Auf sicherer Fläche oder in die Hand eines Teammitglieds. Beide Hände frei fürs Wechselobjektiv.",
+        why: "Altes Objektiv liegt sicher – beide Hände frei fürs Wechselobjektiv.",
         apply: (s) => ({ ...s, oldLens: "safe" }),
       },
     ],
@@ -315,8 +315,8 @@ export const beats: Beat[] = [
     id: "ausrichten",
     title: "Ausrichten",
     prompt: "Das Wechselobjektiv muss jetzt rasch rein – der Body steht offen.",
-    question: "Woran richtest du es aus?",
-    focus: { x: 360, y: 205, scale: 1.05 },
+    question: "Woran richtest du den Objektivverschluss am Kamerabody aus?",
+    focus: { x: 422, y: 228, scale: 1.0 },
     // Abruf zu Quelle 9: „Dabei Übereinstimmung mit Index-Punkt beachten"
     options: [
       {
@@ -345,7 +345,7 @@ export const beats: Beat[] = [
     title: "Wechselobjektiv einsetzen",
     prompt:
       "Zügig jetzt – je kürzer der Body offen steht, desto weniger Staub findet den Weg hinein.",
-    focus: { x: 360, y: 205, scale: 1.12 },
+    focus: { x: 422, y: 228, scale: 1.0 },
     ordered: true,
     // Quelle 9: „Wechselobjektiv rasch einsetzen. Dabei Übereinstimmung mit Index-Punkt beachten"
     // Quelle 10: „ca 1/4 Umdrehung nach rechts (im Uhrzeigersinn) drehen bis
@@ -380,7 +380,7 @@ export const beats: Beat[] = [
     title: "Aufräumen",
     prompt:
       "Das Objektiv sitzt, der Body ist zu. Drei Griffe fehlen – in beliebiger Reihenfolge.",
-    focus: { x: 360, y: 205, scale: 1.0 }, // Überblick: drei Griffe verteilt
+    focus: { x: 422, y: 228, scale: 1.0 }, // Überblick: drei Griffe verteilt
     // Quelle 11: „Beim Ursprünglichen Objektiv hinteren Deckel zumachen und sicher verwahren"
     // Quelle 12: „beim neu angebrachten Objektiv Sonnenblende befestigen"
     // Quelle 13: „und Objektivdeckel abnehmen"
@@ -394,13 +394,13 @@ export const beats: Beat[] = [
       {
         hotspot: "hood",
         label: "Sonnenblende ans neue Objektiv",
-        why: "Sonnenblende sitzt.",
+        why: "Sonnenblende sitzt wieder am Objektiv.",
         apply: (s) => ({ ...s, hood: "new" }),
       },
       {
         hotspot: "front-cap-spare",
         label: "Vorderen Deckel abnehmen",
-        why: "Ohne diesen letzten Griff bleibt das Bild schwarz.",
+        why: "Vorderer Deckel ab – ohne diesen letzten Griff bleibt das Bild schwarz.",
         apply: (s) => ({ ...s, frontCapSpare: "off" }),
       },
     ],
