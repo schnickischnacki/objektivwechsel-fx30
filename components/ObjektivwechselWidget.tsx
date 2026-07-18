@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import ResultScreen from "@/components/ResultScreen";
 import Stage from "@/components/Stage";
 import {
@@ -171,8 +172,20 @@ export default function ObjektivwechselWidget() {
 
           {/* Handlungsebene */}
           {beat?.kind === "choice" ? (
-            <div>
-              <p className="mb-2 font-semibold">{beat.question}</p>
+            <motion.div
+              key={beat.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-2xl border-2 border-accent bg-cream-warm p-4 sm:p-5"
+            >
+              <p className="mb-1 flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-accent">
+                <span aria-hidden className="text-sm leading-none">
+                  ↓
+                </span>
+                Kurz entscheiden – hier, nicht im Bild
+              </p>
+              <p className="mb-3 text-[1.05rem] font-semibold">{beat.question}</p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {beat.options.map((o, i) => (
                   <button
@@ -184,18 +197,18 @@ export default function ObjektivwechselWidget() {
                     onFocus={() => setPreview(o.preview(state.scene))}
                     onMouseLeave={() => setPreview(null)}
                     onBlur={() => setPreview(null)}
-                    className="min-h-[52px] rounded-xl border border-line bg-white px-4 py-3 text-left text-[0.95rem] font-medium transition-colors hover:border-accent hover:bg-cream-warm disabled:opacity-60"
+                    className="min-h-[52px] rounded-xl border border-line bg-white px-4 py-3 text-left text-[0.95rem] font-medium transition-colors hover:border-accent hover:bg-cream disabled:opacity-60"
                   >
                     {o.label}
                   </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ) : (
             <p className="text-sm text-text-muted">
-              Anfassbare Stellen sind hervorgehoben.{" "}
+              <span className="font-semibold text-accent">Tipp die pulsierenden Stellen im Bild an.</span>{" "}
               {beat && beat.kind === "grip" && beat.targets.length > 1 && !beat.ordered
-                ? "Mehrere Griffe sind dran – die Reihenfolge ist dir überlassen."
+                ? "Mehrere sind dran – die Reihenfolge ist dir überlassen."
                 : "Nicht jede davon ist eine gute Idee."}
             </p>
           )}

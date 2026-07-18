@@ -25,6 +25,7 @@ const TRAY = {
 };
 
 type Pose = { x: number; y: number; rotate: number };
+type Hint = { cx?: number; cy?: number; rx: number; ry?: number };
 
 function rot(x: number, y: number, deg: number) {
   const r = (deg * Math.PI) / 180;
@@ -57,6 +58,16 @@ export default function Stage({
   const tilt = TILT[scene.tilt];
   const bodyOpen = scene.oldLens !== "mounted" && scene.spareLens === "safe";
   const k = focus.scale;
+
+  // Zoom-Frame in der Szene halten: nie über den Rand hinaus, sonst ragen
+  // Objekte halb aus dem Bild und wirken wie kaputte Interaktionsflächen.
+  const halfW = VIEW.w / (2 * k);
+  const halfH = VIEW.h / (2 * k);
+  const cx = Math.min(Math.max(focus.x, halfW), VIEW.w - halfW);
+  const cy = Math.min(Math.max(focus.y, halfH), VIEW.h - halfH);
+  const tx = VIEW.w / 2 - k * cx;
+  const ty = VIEW.h / 2 - k * cy;
+
 
   const oldLensPose: Pose =
     scene.oldLens === "safe"
@@ -101,61 +112,61 @@ export default function Stage({
   return (
     <svg
       viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}
-      className="block w-full touch-manipulation select-none"
+      preserveAspectRatio="xMidYMid meet"
+      className="mx-auto block max-h-[48vh] w-full touch-manipulation select-none"
       role="group"
-      aria-label="Werkbank mit Kamera, Objektiven, Deckeln und Sonnenblende – anfassbare Stellen sind fokussierbar"
+      aria-label="Werkbank mit Kamera, Objektiven, Deckeln und Sonnenblende – anfassbare Stellen sind hervorgehoben"
     >
-      <defs>
-        <linearGradient id="bench" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fbeada" />
-          <stop offset="1" stopColor="#f2e2d1" />
-        </linearGradient>
-      </defs>
-
-      <rect x="0" y="0" width={VIEW.w} height={VIEW.h} fill="url(#bench)" />
+      {/* Flache Fläche (kein Gradient), damit der Rand links/rechts nahtlos in den
+          gleichfarbigen Container-Hintergrund übergeht, wenn die Höhe begrenzt wird. */}
+      <rect x="0" y="0" width={VIEW.w} height={VIEW.h} fill="#fbeada" />
 
       {/* Zoom auf die Situation. Bewusst ohne motion: SVG-Transform-Origin muss
           gegen den viewBox-Ursprung rechnen (transformBox), sonst verrutscht alles. */}
       <g
         style={{
-          transform: `translate(${VIEW.w / 2 - k * focus.x}px, ${VIEW.h / 2 - k * focus.y}px) scale(${k})`,
+          transform: `translate(${tx}px, ${ty}px) scale(${k})`,
           transformOrigin: "0px 0px",
           transformBox: "view-box",
-          transition: "transform 600ms cubic-bezier(0.3, 0, 0.2, 1)",
+          transition: "transform 650ms cubic-bezier(0.3, 0, 0.2, 1)",
         }}
       >
         {/* Werkbankkante */}
         <line x1="0" y1="300" x2={VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
 
-        {/* Sichere Fläche */}
-        <rect
-          x="520"
-          y="110"
-          width="180"
-          height="180"
-          rx="10"
-          fill="#f6f4f0"
-          stroke="#e0d3c2"
-          strokeWidth="2"
-          strokeDasharray="6 5"
-        />
-        <text x="610" y="128" textAnchor="middle" fill="#8a8478" fontSize="10" letterSpacing="1.4">
-          SICHERE FLÄCHE
+        {/* Ablage-Zone für lose Teile */}
+        <rect x="150" y="312" width="330" height="80" rx="10" fill="#f1e2d0" opacity="0.6" />
+        <text x="164" y="332" fill="#a99a86" fontSize="11" letterSpacing="1.6">
+          ABLAGE
         </text>
 
-        <text x="150" y="332" fill="#8a8478" fontSize="10" letterSpacing="1.4">
-          ABGELEGT
+        {/* Sichere Fläche mit dem Wechselobjektiv */}
+        <rect
+          x="520"
+          y="108"
+          width="182"
+          height="186"
+          rx="12"
+          fill="#f6f4f0"
+          stroke="#d9cbba"
+          strokeWidth="2"
+          strokeDasharray="7 5"
+        />
+        <text x="611" y="128" textAnchor="middle" fill="#a99a86" fontSize="11" letterSpacing="1.4">
+          WECHSELOBJEKTIV
         </text>
 
         {/* Staub – nur wenn die Öffnung nicht nach unten zeigt */}
         {scene.tilt !== "down" && <Dust danger={scene.tilt === "up"} />}
 
         {/* --- Gehäuse ------------------------------------------------- */}
-        <motion.g
-          initial={false}
-          animate={{ rotate: tilt }}
-          transition={spring}
-          style={{ transformOrigin: `${PIVOT.x}px ${PIVOT.y}px` }}
+        <g
+          style={{
+            transform: `rotate(${tilt}deg)`,
+            transformBox: "view-box",
+            transformOrigin: `${PIVOT.x}px ${PIVOT.y}px`,
+            transition: "transform 520ms cubic-bezier(0.3,0,0.2,1)",
+          }}
         >
           <rect x="196" y="126" width="96" height="26" rx="6" fill="#2b3543" />
           <rect x="150" y="150" width="182" height="120" rx="14" fill="#1e2530" />
@@ -178,6 +189,7 @@ export default function Stage({
                 live={live.includes("sensor")}
                 onGrip={onGrip}
                 label="Sensor"
+                hint={{ cx: MOUNT.x + 3, cy: MOUNT.y, rx: 18, ry: 48 }}
               >
                 <rect x={MOUNT.x - 22} y={MOUNT.y - 34} width="44" height="68" fill="transparent" />
                 <rect x={MOUNT.x - 3} y={MOUNT.y - 24} width="12" height="48" rx="2" fill="#2f6f8f" />
@@ -189,7 +201,13 @@ export default function Stage({
           <circle cx={MOUNT.x - 2} cy={MOUNT.y - 56} r="4" fill="#ffd591" />
 
           {/* Ein/Aus */}
-          <Hotspot id="power" live={live.includes("power")} onGrip={onGrip} label="Ein-/Ausschalter">
+          <Hotspot
+            id="power"
+            live={live.includes("power")}
+            onGrip={onGrip}
+            label="Ein-/Ausschalter"
+            hint={{ cx: 221, cy: 139, rx: 28 }}
+          >
             <circle cx="221" cy="139" r="30" fill="transparent" />
             <rect x="204" y="130" width="34" height="18" rx="9" fill="#4a5566" />
             <motion.circle
@@ -203,7 +221,13 @@ export default function Stage({
           </Hotspot>
 
           {/* Release */}
-          <Hotspot id="release" live={live.includes("release")} onGrip={onGrip} label="Release-Knopf des Bajonetts">
+          <Hotspot
+            id="release"
+            live={live.includes("release")}
+            onGrip={onGrip}
+            label="Release-Knopf des Bajonetts"
+            hint={{ cx: 316, cy: 256, rx: 22 }}
+          >
             <circle cx="316" cy="256" r="30" fill="transparent" />
             <circle
               cx="316"
@@ -214,92 +238,129 @@ export default function Stage({
               strokeWidth="2"
             />
           </Hotspot>
-        </motion.g>
+        </g>
 
-        {/* --- Objektive ----------------------------------------------- */}
-        <motion.g initial={false} animate={oldLensPose} transition={spring}>
+        {/* --- Ursprüngliches Objektiv --------------------------------- */}
+        <Piece pose={oldLensPose}>
           <Lens tone="old" indexOn={false} />
-        </motion.g>
+        </Piece>
 
-        <motion.g initial={false} animate={spareLensPose} transition={spring}>
+        {/* --- Wechselobjektiv ----------------------------------------- */}
+        <Piece pose={spareLensPose}>
           <Hotspot
             id="spare-lens"
             live={live.includes("spare-lens")}
             onGrip={onGrip}
             label="Wechselobjektiv ansetzen"
+            hint={{ cx: 0, cy: 0, rx: 66, ry: 52 }}
           >
             <Lens tone="spare" indexOn={scene.spareLens !== "safe"} locked={scene.spareLens === "locked"} />
           </Hotspot>
-        </motion.g>
+        </Piece>
 
         {/* Altes Objektiv als Griff, sobald es lose ist */}
         {scene.oldLens === "loose" && (
-          <motion.g initial={false} animate={oldLensPose} transition={spring}>
+          <Piece pose={oldLensPose}>
             <Hotspot
               id="old-lens"
               live={live.includes("old-lens")}
               onGrip={onGrip}
               label="Altes Objektiv sicher ablegen"
+              hint={{ cx: 0, cy: 0, rx: 66, ry: 52 }}
             >
               <rect x="-62" y="-46" width="124" height="92" rx="8" fill="transparent" />
             </Hotspot>
-          </motion.g>
+          </Piece>
         )}
 
         {/* --- Sonnenblende -------------------------------------------- */}
-        <motion.g initial={false} animate={hoodPose} transition={spring}>
-          <Hotspot id="hood" live={live.includes("hood")} onGrip={onGrip} label="Sonnenblende">
+        <Piece pose={hoodPose}>
+          <Hotspot
+            id="hood"
+            live={live.includes("hood")}
+            onGrip={onGrip}
+            label="Sonnenblende"
+            hint={{ cx: 0, cy: 0, rx: 26, ry: 54 }}
+          >
             <path d="M -14 -42 L 14 -54 L 14 54 L -14 42 Z" fill="#2b3543" />
           </Hotspot>
-        </motion.g>
+        </Piece>
 
         {/* --- Deckel --------------------------------------------------- */}
-        <motion.g initial={false} animate={frontCapOldPose} transition={spring}>
+        <Piece pose={frontCapOldPose}>
           <Hotspot
             id="front-cap-old"
             live={live.includes("front-cap-old")}
             onGrip={onGrip}
             label="Vorderer Objektivdeckel"
+            hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
           >
             <Cap label="V" />
           </Hotspot>
-        </motion.g>
+        </Piece>
 
-        <motion.g initial={false} animate={rearCapSparePose} transition={spring}>
+        <Piece pose={rearCapSparePose}>
           <Hotspot
             id="rear-cap-spare"
             live={live.includes("rear-cap-spare")}
             onGrip={onGrip}
             label="Hinterer Objektivdeckel"
+            hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
           >
             <Cap label="H" />
           </Hotspot>
-        </motion.g>
+        </Piece>
 
-        <motion.g initial={false} animate={frontCapSparePose} transition={spring}>
+        <Piece pose={frontCapSparePose}>
           <Hotspot
             id="front-cap-spare"
             live={live.includes("front-cap-spare")}
             onGrip={onGrip}
             label="Vorderer Deckel des Wechselobjektivs"
+            hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
           >
             <Cap label="V" />
           </Hotspot>
-        </motion.g>
+        </Piece>
 
         {/* --- Drehen --------------------------------------------------- */}
         {(live.includes("rotate-ccw") || live.includes("rotate-cw")) && (
           <g>
             {live.includes("rotate-ccw") && (
-              <RotateGrip id="rotate-ccw" dir="ccw" onGrip={onGrip} x={LENS_AT.x - 6} y={110} />
+              <RotateGrip id="rotate-ccw" dir="ccw" onGrip={onGrip} x={LENS_AT.x - 6} y={104} />
             )}
             {live.includes("rotate-cw") && (
-              <RotateGrip id="rotate-cw" dir="cw" onGrip={onGrip} x={LENS_AT.x + 62} y={110} />
+              <RotateGrip id="rotate-cw" dir="cw" onGrip={onGrip} x={LENS_AT.x + 62} y={104} />
             )}
           </g>
         )}
       </g>
     </svg>
+  );
+}
+
+
+/**
+ * Bewegliches Objekt: Position und Drehung über CSS-Transform (nicht motion x/y),
+ * weil motions x/y auf einem SVG-<g> die Feder auf halbem Weg einfrieren lässt.
+ * Der Zoom-Container nutzt denselben CSS-Ansatz und läuft stabil.
+ * Aussen translate (view-box), innen rotate um die Objektmitte.
+ */
+function Piece({ pose, children }: { pose: Pose; children: React.ReactNode }) {
+  const ease = "transform 520ms cubic-bezier(0.3,0,0.2,1)";
+  return (
+    <g
+      style={{
+        transform: `translate(${pose.x}px, ${pose.y}px)`,
+        transformBox: "view-box",
+        transformOrigin: "0px 0px",
+        transition: ease,
+      }}
+    >
+      <g style={{ transform: `rotate(${pose.rotate}deg)`, transformBox: "fill-box", transformOrigin: "center", transition: ease }}>
+        {children}
+      </g>
+    </g>
   );
 }
 
@@ -340,23 +401,50 @@ function Cap({ label }: { label: string }) {
 }
 
 /**
+ * Pulsierende Affordance an einer anfassbaren Stelle: statischer Ring plus ein
+ * nach außen laufender Puls-Ring. Weißer Unterbau, damit der orange Ring auf
+ * jedem Hintergrund (Cream, dunkle Kamera, orange Deckel) sichtbar bleibt.
+ */
+function Pulse({ cx = 0, cy = 0, rx, ry }: Hint) {
+  const yr = ry ?? rx;
+  return (
+    <g style={{ pointerEvents: "none" }} aria-hidden>
+      <ellipse cx={cx} cy={cy} rx={rx} ry={yr} fill="none" stroke="#ffffff" strokeWidth={5} opacity={0.55} />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={yr} fill="none" stroke="#c1651f" strokeWidth={2.5} />
+      <motion.ellipse
+        cx={cx}
+        cy={cy}
+        fill="none"
+        stroke="#c1651f"
+        strokeWidth={2.5}
+        initial={{ rx, ry: yr, opacity: 0.55 }}
+        animate={{ rx: rx + 11, ry: yr + 11, opacity: 0 }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+      />
+    </g>
+  );
+}
+
+/**
  * Anfassbares Element. Nur „live" reagiert – sonst ist es reine Kulisse.
  *
- * Wichtig: Griffe, Fallen und Korrekturen sehen identisch aus. Würden nur die
- * richtigen Stellen leuchten, wäre die Entscheidung geschenkt – und genau die
- * Unterscheidung ist der Lerninhalt.
+ * Wichtig: Griffe, Fallen und Korrekturen sehen identisch aus (gleicher Puls-Ring).
+ * Würden nur die richtigen Stellen leuchten, wäre die Entscheidung geschenkt –
+ * und genau die Unterscheidung ist der Lerninhalt.
  */
 function Hotspot({
   id,
   live,
   onGrip,
   label,
+  hint,
   children,
 }: {
   id: HotspotId;
   live: boolean;
   onGrip: (id: HotspotId) => void;
   label: string;
+  hint?: Hint;
   children: React.ReactNode;
 }) {
   if (!live) return <g>{children}</g>;
@@ -375,6 +463,7 @@ function Hotspot({
       }}
     >
       {children}
+      {hint && <Pulse {...hint} />}
     </g>
   );
 }
@@ -409,6 +498,15 @@ function RotateGrip({
       transform={`translate(${x},${y})`}
     >
       <circle r="32" fill="transparent" />
+      <motion.circle
+        r="26"
+        fill="none"
+        stroke="#c1651f"
+        strokeWidth={2.5}
+        initial={{ r: 26, opacity: 0.5 }}
+        animate={{ r: 37, opacity: 0 }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+      />
       <circle r="24" fill="#ffffff" stroke="#c1651f" strokeWidth="2.5" />
       <g transform={`scale(${flip},1)`}>
         <path
