@@ -360,8 +360,11 @@ export const beats: Beat[] = [
       {
         hotspot: "rotate-cw",
         label: "Nach rechts drehen",
-        why: "Eine 1/4 Umdrehung nach rechts (im Uhrzeigersinn), bis es hörbar klickt und fest sitzt.",
-        apply: (s) => ({ ...s, spareLens: "locked" }),
+        why: "Eine 1/4 Umdrehung nach rechts (im Uhrzeigersinn), bis es hörbar klickt und fest sitzt. Der Body ist zu – die Kamera darf wieder aufrecht.",
+        // Sobald nichts mehr offen steht, endet auch die Zwangshaltung „Öffnung nach
+        // unten". Die Kamera richtet sich auf – das macht das Ende des heiklen
+        // Abschnitts sichtbar, statt ihn stumm weiterlaufen zu lassen.
+        apply: (s) => ({ ...s, spareLens: "locked", tilt: "level" }),
       },
     ],
     traps: [{ hotspot: "sensor", trap: "F2" }],

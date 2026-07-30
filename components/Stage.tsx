@@ -4,28 +4,63 @@ import { motion } from "motion/react";
 import type { HotspotId, SceneState } from "@/data/beats";
 
 /* Werkbank in SVG-Koordinaten. Alles hier ist schematisch, nicht maßstäblich. */
-const VIEW = { x: 130, y: 66, w: 585, h: 324 };
+const VIEW = { x: 130, y: 50, w: 585, h: 340 };
 const PIVOT = { x: 240, y: 210 };
-const TILT = { up: -15, level: 0, down: 15 };
+
+/**
+ * „Nach unten" ist eine echte Vierteldrehung (90°), keine Andeutung: Beim Wechsel
+ * zeigt die Bajonett-Öffnung senkrecht zum Boden. Alles andere wäre fachlich
+ * irreführend – genau diese Haltung ist der Lerninhalt der Situation „haltung".
+ */
+const TILT = { up: -15, level: 0, down: 90 };
+
+/**
+ * Aufgerichtet ist die Kamera ein hoher, schmaler Turm statt eines breiten Riegels.
+ * Der Versatz je Neigung rückt sie danach wieder in den Bildausschnitt – ohne ihn
+ * stünde die Rückseite über dem oberen Rand und das Objektiv unter dem unteren.
+ */
+const TILT_SHIFT = {
+  up: { x: 0, y: 18 },
+  level: { x: 0, y: 18 },
+  down: { x: 38, y: -60 },
+};
 
 const MOUNT = { x: 332, y: 210 };
 const LENS_AT = { x: 387, y: 210 };
 const HOOD_AT = { x: 480, y: 210 };
 const CAP_FRONT_AT = { x: 449, y: 210 };
 
-const SAFE_SPARE = { x: 610, y: 160 };
-const SAFE_OLD = { x: 610, y: 245 };
-const LOOSE = { x: 470, y: 100 };
+/* Abgelegte Objektive stehen senkrecht auf ihrem Frontdeckel – so, wie sie von der
+   nach unten gehaltenen Kamera kommen. Deshalb nebeneinander statt übereinander. */
+const SAFE_SPARE = { x: 566, y: 196 };
+const SAFE_OLD = { x: 660, y: 196 };
+const LOOSE = { x: 436, y: 158 };
 
+/** Abstand Objektivmitte → Deckel entlang der optischen Achse (jetzt senkrecht). */
+const CAP_GAP = 62;
+
+/* Reihenfolge im Fach: erst die breite Sonnenblende, dann die drei Deckel. Der
+   Abstand ist nach den Griffringen bemessen, nicht nach den Teilen – die Ringe
+   sind deutlich größer und würden sich sonst überlappen. */
 const TRAY = {
-  hood: { x: 215, y: 340 },
-  frontCapOld: { x: 296, y: 340 },
-  rearCapSpare: { x: 362, y: 340 },
-  frontCapSpare: { x: 428, y: 340 },
+  hood: { x: 470, y: 322 },
+  frontCapOld: { x: 570, y: 336 },
+  rearCapSpare: { x: 620, y: 336 },
+  frontCapSpare: { x: 670, y: 336 },
 };
 
 type Pose = { x: number; y: number; rotate: number };
 type Hint = { cx?: number; cy?: number; rx: number; ry?: number };
+
+/**
+ * Griffring um ein Objektiv. Dreht mit dem Stück mit, deshalb `rx` entlang der
+ * optischen Achse. Gegen die Achse versetzt, damit er das stehende Objektiv samt
+ * Frontdeckel umschließt, statt den Deckel zu durchschneiden.
+ */
+const LENS_HINT: Hint = { cx: 0, cy: 8, rx: 76, ry: 54 };
+
+/** Senkrecht abgelegt: Frontlinse nach unten, Bajonett nach oben. */
+const STANDING = 90;
 
 function rot(x: number, y: number, deg: number) {
   const r = (deg * Math.PI) / 180;
@@ -37,9 +72,9 @@ function rot(x: number, y: number, deg: number) {
   };
 }
 
-function att(x: number, y: number, tilt: number): Pose {
+function att(x: number, y: number, tilt: number, shift: { x: number; y: number }): Pose {
   const p = rot(x, y, tilt);
-  return { x: p.x, y: p.y, rotate: tilt };
+  return { x: p.x + shift.x, y: p.y + shift.y, rotate: tilt };
 }
 
 const spring = { type: "spring", stiffness: 170, damping: 22 } as const;
@@ -56,6 +91,7 @@ export default function Stage({
   onGrip: (id: HotspotId) => void;
 }) {
   const tilt = TILT[scene.tilt];
+  const shift = TILT_SHIFT[scene.tilt];
   const bodyOpen = scene.oldLens !== "mounted" && scene.spareLens === "safe";
   const k = focus.scale;
 
@@ -71,43 +107,43 @@ export default function Stage({
 
   const oldLensPose: Pose =
     scene.oldLens === "safe"
-      ? { ...SAFE_OLD, rotate: 0 }
+      ? { ...SAFE_OLD, rotate: STANDING }
       : scene.oldLens === "loose"
-        ? { ...LOOSE, rotate: -8 }
-        : att(LENS_AT.x, LENS_AT.y, tilt);
+        ? { ...LOOSE, rotate: STANDING }
+        : att(LENS_AT.x, LENS_AT.y, tilt, shift);
 
   const spareLensPose: Pose =
     scene.spareLens === "safe"
-      ? { ...SAFE_SPARE, rotate: 0 }
-      : att(LENS_AT.x, LENS_AT.y, tilt);
+      ? { ...SAFE_SPARE, rotate: STANDING }
+      : att(LENS_AT.x, LENS_AT.y, tilt, shift);
 
   const hoodPose: Pose =
     scene.hood === "tray"
       ? { ...TRAY.hood, rotate: -90 }
-      : att(HOOD_AT.x, HOOD_AT.y, tilt);
+      : att(HOOD_AT.x, HOOD_AT.y, tilt, shift);
 
   const frontCapOldPose: Pose =
     scene.frontCapOld === "off"
       ? { ...TRAY.frontCapOld, rotate: 0 }
       : scene.oldLens === "safe"
-        ? { x: SAFE_OLD.x + 62, y: SAFE_OLD.y, rotate: 0 }
+        ? { x: SAFE_OLD.x, y: SAFE_OLD.y + CAP_GAP, rotate: STANDING }
         : scene.oldLens === "loose"
-          ? { x: LOOSE.x + 62, y: LOOSE.y - 8, rotate: -8 }
-          : att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt);
+          ? { x: LOOSE.x, y: LOOSE.y + CAP_GAP, rotate: STANDING }
+          : att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt, shift);
 
   const rearCapSparePose: Pose =
     scene.rearCapSpare === "spare"
-      ? { x: SAFE_SPARE.x - 62, y: SAFE_SPARE.y, rotate: 0 }
+      ? { x: SAFE_SPARE.x, y: SAFE_SPARE.y - CAP_GAP, rotate: STANDING }
       : scene.rearCapSpare === "tray"
         ? { ...TRAY.rearCapSpare, rotate: 0 }
-        : { x: SAFE_OLD.x - 62, y: SAFE_OLD.y, rotate: 0 };
+        : { x: SAFE_OLD.x, y: SAFE_OLD.y - CAP_GAP, rotate: STANDING };
 
   const frontCapSparePose: Pose =
     scene.frontCapSpare === "off"
       ? { ...TRAY.frontCapSpare, rotate: 0 }
       : scene.spareLens === "safe"
-        ? { x: SAFE_SPARE.x + 62, y: SAFE_SPARE.y, rotate: 0 }
-        : att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt);
+        ? { x: SAFE_SPARE.x, y: SAFE_SPARE.y + CAP_GAP, rotate: STANDING }
+        : att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt, shift);
 
   return (
     <svg
@@ -131,28 +167,31 @@ export default function Stage({
           transition: "transform 650ms cubic-bezier(0.3, 0, 0.2, 1)",
         }}
       >
-        {/* Werkbankkante */}
-        <line x1={VIEW.x} y1="300" x2={VIEW.x + VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
+        {/* Werkbankkante – nur unter der Ablageseite. Über die volle Breite würde sie
+            die senkrecht gehaltene Kamera durchschneiden, als steckte sie im Tisch. */}
+        <line x1="388" y1="300" x2={VIEW.x + VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
 
-        {/* Ablage-Zone für lose Teile */}
-        <rect x="150" y="302" width="330" height="78" rx="10" fill="#f1e2d0" opacity="0.6" />
-        <text x="164" y="322" fill="#a99a86" fontSize="11" letterSpacing="1.6">
+        {/* Ablage-Zone für lose Teile. Liegt rechts, damit die nach unten gehaltene
+            Kamera die linke Hälfte in voller Höhe für sich hat. */}
+        <rect x="388" y="302" width="314" height="78" rx="10" fill="#f1e2d0" opacity="0.6" />
+        <text x="392" y="374" fill="#a99a86" fontSize="11" letterSpacing="1.6">
           ABLAGE
         </text>
 
-        {/* Sichere Fläche mit dem Wechselobjektiv */}
+        {/* Sichere Fläche mit dem Wechselobjektiv – zwei Stellplätze nebeneinander,
+            weil senkrecht stehende Objektive übereinander nicht hineinpassen. */}
         <rect
           x="520"
-          y="108"
-          width="182"
-          height="186"
+          y="100"
+          width="186"
+          height="196"
           rx="12"
           fill="#f6f4f0"
           stroke="#d9cbba"
           strokeWidth="2"
           strokeDasharray="7 5"
         />
-        <text x="611" y="100" textAnchor="middle" fill="#a99a86" fontSize="11" letterSpacing="1.4">
+        <text x="613" y="92" textAnchor="middle" fill="#a99a86" fontSize="11" letterSpacing="1.4">
           WECHSELOBJEKTIV
         </text>
 
@@ -162,7 +201,7 @@ export default function Stage({
         {/* --- Gehäuse ------------------------------------------------- */}
         <g
           style={{
-            transform: `rotate(${tilt}deg)`,
+            transform: `translate(${shift.x}px, ${shift.y}px) rotate(${tilt}deg)`,
             transformBox: "view-box",
             transformOrigin: `${PIVOT.x}px ${PIVOT.y}px`,
             transition: "transform 520ms cubic-bezier(0.3,0,0.2,1)",
@@ -175,9 +214,13 @@ export default function Stage({
           <rect x="172" y="170" width="60" height="40" rx="3" fill="#4d5b6e" opacity={scene.power === "on" ? 1 : 0.35} />
 
           <circle cx="276" cy="139" r="5" fill={scene.power === "on" ? "#e0553f" : "#4a5566"} />
-          <text x="286" y="144" fill="#9aa3b2" fontSize="11" fontWeight="600">
-            {scene.power === "on" ? "REC" : "OFF"}
-          </text>
+          {/* Statusanzeige, kein Aufdruck: bleibt waagrecht, auch wenn die Kamera
+              senkrecht gehalten wird – hochkant wäre „REC" bzw. „OFF" unlesbar. */}
+          <g style={{ transform: `rotate(${-tilt}deg)`, transformBox: "view-box", transformOrigin: "286px 140px" }}>
+            <text x="286" y="144" fill="#9aa3b2" fontSize="11" fontWeight="600">
+              {scene.power === "on" ? "REC" : "OFF"}
+            </text>
+          </g>
 
           {/* Bajonett + Sensor */}
           <ellipse cx={MOUNT.x} cy={MOUNT.y} rx="12" ry="48" fill="#39424f" />
@@ -252,7 +295,7 @@ export default function Stage({
             live={live.includes("spare-lens")}
             onGrip={onGrip}
             label="Wechselobjektiv ansetzen"
-            hint={{ cx: 0, cy: 0, rx: 66, ry: 52 }}
+            hint={LENS_HINT}
           >
             <Lens tone="spare" indexOn={scene.spareLens !== "safe"} locked={scene.spareLens === "locked"} />
           </Hotspot>
@@ -266,7 +309,7 @@ export default function Stage({
               live={live.includes("old-lens")}
               onGrip={onGrip}
               label="Altes Objektiv sicher ablegen"
-              hint={{ cx: 0, cy: 0, rx: 66, ry: 52 }}
+              hint={LENS_HINT}
             >
               <rect x="-62" y="-46" width="124" height="92" rx="8" fill="transparent" />
             </Hotspot>
@@ -296,7 +339,7 @@ export default function Stage({
             label="Vorderer Objektivdeckel"
             hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
           >
-            <Cap label="V" />
+            <Cap label="V" spin={frontCapOldPose.rotate} />
           </Hotspot>
         </Piece>
 
@@ -308,7 +351,7 @@ export default function Stage({
             label="Hinterer Objektivdeckel"
             hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
           >
-            <Cap label="H" />
+            <Cap label="H" spin={rearCapSparePose.rotate} />
           </Hotspot>
         </Piece>
 
@@ -320,18 +363,21 @@ export default function Stage({
             label="Vorderer Deckel des Wechselobjektivs"
             hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
           >
-            <Cap label="V" />
+            <Cap label="V" spin={frontCapSparePose.rotate} />
           </Hotspot>
         </Piece>
 
         {/* --- Drehen --------------------------------------------------- */}
+        {/* Beide Drehrichtungen sind nur bei nach unten gehaltener Kamera dran; dort
+            ist rechts neben dem Kameraturm der einzige freie Streifen – deshalb
+            untereinander statt nebeneinander. */}
         {(live.includes("rotate-ccw") || live.includes("rotate-cw")) && (
           <g>
             {live.includes("rotate-ccw") && (
-              <RotateGrip id="rotate-ccw" dir="ccw" onGrip={onGrip} x={278} y={96} />
+              <RotateGrip id="rotate-ccw" dir="ccw" onGrip={onGrip} x={446} y={196} />
             )}
             {live.includes("rotate-cw") && (
-              <RotateGrip id="rotate-cw" dir="cw" onGrip={onGrip} x={452} y={96} />
+              <RotateGrip id="rotate-cw" dir="cw" onGrip={onGrip} x={446} y={252} />
             )}
           </g>
         )}
@@ -345,22 +391,23 @@ export default function Stage({
  * Bewegliches Objekt: Position und Drehung über CSS-Transform (nicht motion x/y),
  * weil motions x/y auf einem SVG-<g> die Feder auf halbem Weg einfrieren lässt.
  * Der Zoom-Container nutzt denselben CSS-Ansatz und läuft stabil.
- * Aussen translate (view-box), innen rotate um die Objektmitte.
+ *
+ * Drehung und Verschiebung in einer Transform um den Nullpunkt: Jedes Teil ist um
+ * (0,0) herum gezeichnet, also dreht es um die eigene Mitte. Eine getrennte
+ * Innendrehung um `fill-box`/`center` verschob die Teile – deren Mitte ist die
+ * Mitte des Bounding-Box inklusive unsichtbarer Trefferflächen, nicht (0,0).
  */
 function Piece({ pose, children }: { pose: Pose; children: React.ReactNode }) {
-  const ease = "transform 520ms cubic-bezier(0.3,0,0.2,1)";
   return (
     <g
       style={{
-        transform: `translate(${pose.x}px, ${pose.y}px)`,
+        transform: `translate(${pose.x}px, ${pose.y}px) rotate(${pose.rotate}deg)`,
         transformBox: "view-box",
         transformOrigin: "0px 0px",
-        transition: ease,
+        transition: "transform 520ms cubic-bezier(0.3,0,0.2,1)",
       }}
     >
-      <g style={{ transform: `rotate(${pose.rotate}deg)`, transformBox: "fill-box", transformOrigin: "center", transition: ease }}>
-        {children}
-      </g>
+      {children}
     </g>
   );
 }
@@ -392,8 +439,11 @@ function Lens({
 /**
  * Objektivdeckel als plastische Kappe: dunkler Rand hinten, hellere Fläche vorn,
  * zwei Griffmulden. Flache Ovale waren im Test nicht als Deckel erkennbar.
+ *
+ * `spin` ist die Drehung des umgebenden Stücks. Die Kappe dreht mit, ihr Buchstabe
+ * nicht – „H" und „V" auf der Seite liegend sind nicht mehr lesbar.
  */
-function Cap({ label }: { label: string }) {
+function Cap({ label, spin = 0 }: { label: string; spin?: number }) {
   return (
     <g>
       <circle cx="0" cy="0" r="26" fill="transparent" />
@@ -401,9 +451,11 @@ function Cap({ label }: { label: string }) {
       <ellipse cx="-1" cy="0" rx="12" ry="38" fill="#c1651f" />
       <rect x="-5" y="-22" width="9" height="7" rx="3.5" fill="#8f4715" opacity="0.75" />
       <rect x="-5" y="15" width="9" height="7" rx="3.5" fill="#8f4715" opacity="0.75" />
-      <text x="-1" y="5" textAnchor="middle" fill="#fbeada" fontSize="13" fontWeight="700">
-        {label}
-      </text>
+      <g transform={`rotate(${-spin})`}>
+        <text x="0" y="5" textAnchor="middle" fill="#fbeada" fontSize="13" fontWeight="700">
+          {label}
+        </text>
+      </g>
     </g>
   );
 }
@@ -496,8 +548,8 @@ function RotateGrip({
   x: number;
   y: number;
 }) {
-  const W = 154;
-  const H = 44;
+  const W = 124;
+  const H = 42;
   const text = dir === "ccw" ? "nach links" : "nach rechts";
   return (
     <g
@@ -543,10 +595,10 @@ function RotateGrip({
         strokeWidth="2.5"
       />
       {/* Rotations-Icon (rotate-left.png); für „nach rechts" gespiegelt */}
-      <g transform={`translate(${-W / 2 + 27},0) scale(${dir === "cw" ? -1 : 1},1)`}>
-        <image href="/rotate-left.png" x={-13} y={-13} width={26} height={26} />
+      <g transform={`translate(${-W / 2 + 22},0) scale(${dir === "cw" ? -1 : 1},1)`}>
+        <image href="/rotate-left.png" x={-11} y={-11} width={22} height={22} />
       </g>
-      <text x={20} y={6} textAnchor="middle" fontSize="15" fontWeight="700" fill="#c1651f">
+      <text x={17} y={5} textAnchor="middle" fontSize="14" fontWeight="700" fill="#c1651f">
         {text}
       </text>
     </g>
