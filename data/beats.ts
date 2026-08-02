@@ -98,7 +98,10 @@ export type Correction = {
 export type TrapId = "F1" | "F2" | "F3";
 
 export const trapText: Record<TrapId, string> = {
-  F1: "Staub fällt direkt auf den Sensor. Sensor-Reinigung: rund 300 € beim Verleih.",
+  // Bewusst ohne Betragsangabe: Die „rund 300 €" aus der Kursbesprechung sind
+  // nicht gegengeprüft (Stand 02.08.2026). Qualitativ formuliert wirkt die
+  // Konsequenz genauso, ohne eine ungesicherte Zahl zu behaupten.
+  F1: "Staub fällt direkt auf den Sensor. Eine Sensor-Reinigung wird teuer.",
   F2: "Der Sensor wird nie berührt. Fingerabdrücke sieht man in jeder Aufnahme.",
   F3: "Kamera ist immer aus, bevor der Body geöffnet wird.",
 };
@@ -132,7 +135,7 @@ export type Beat =
 export const intro = {
   kicker: "Bevor es losgeht",
   title: "Objektiv wechseln, ohne den Sensor zu ruinieren",
-  lead: "Beim Wechsel steht der Body offen – dahinter liegt der Sensor frei. Ein Staubkorn oder Fingerabdruck darauf sieht man in jeder Aufnahme; die Reinigung kostet beim Verleih rund 300 €.",
+  lead: "Beim Wechsel steht der Body offen – dahinter liegt der Sensor frei. Ein Staubkorn oder Fingerabdruck darauf sieht man in jeder Aufnahme, und eine Reinigung wird teuer.",
   body: "Deshalb hat der Wechsel eine feste Reihenfolge: vorbereiten, sichern, öffnen, zügig tauschen, aufräumen. Genau die sollst du in der Prüfung vorführen können.",
   how: [
     "Tippe die hervorgehobenen Stellen an der Werkbank an.",

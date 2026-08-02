@@ -67,9 +67,11 @@ Detailreihenfolge innerhalb einer Phase.
 ## Bekannte offene Punkte
 
 - Die drei Fehlhandlungen stammen aus der Konzeptvorgabe, nicht wörtlich aus der
-  alten Kursseite. Der Sensor-Reinigungspreis („rund 300 € beim Verleih") ist eine
-  Angabe aus der Kursbesprechung – vor dem Studierenden-Einsatz mit Michael
-  gegenklären.
+  alten Kursseite – vor dem Studierenden-Einsatz mit Michael gegenklären.
+  Die frühere Betragsangabe zur Sensor-Reinigung („rund 300 € beim Verleih",
+  aus der Kursbesprechung, nicht gegengeprüft) ist am 02.08.2026 aus Startkarte
+  und Fehlermeldung entfernt worden; beide Stellen sagen jetzt qualitativ
+  „wird teuer".
 - Die Szene bleibt am Ende in der nach unten geneigten Haltung. Die Quelle sagt
   nichts über ein Zurückneigen, deshalb wurde nichts erfunden.
 - Alte Listen-Version: als Git-Tag `v1-listen-sortierung` und physisch unter
