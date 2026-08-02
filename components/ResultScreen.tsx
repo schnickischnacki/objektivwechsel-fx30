@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
+import { downloadCertificate } from "@/lib/certificate";
 import type { Slip } from "@/lib/engine";
 import type { BestResult } from "@/lib/storage";
 
@@ -16,6 +18,23 @@ export default function ResultScreen({
   onAgain: () => void;
 }) {
   const clean = slips.length === 0;
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function onCertificate() {
+    if (!name.trim() || busy) return;
+    setBusy(true);
+    try {
+      await downloadCertificate({
+        name: name.trim(),
+        seconds,
+        errors: slips.length,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -71,6 +90,41 @@ export default function ResultScreen({
             </ul>
           </div>
         )}
+
+        {/* Zertifikat: Name wird nur clientseitig in die PDF geschrieben –
+            keine Speicherung, keine Übertragung. */}
+        <div className="mb-6 rounded-xl border border-line bg-cream p-4">
+          <p className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
+            Zertifikat
+          </p>
+          <p className="mb-3 max-w-[58ch] text-sm text-text-muted">
+            Trag deinen Namen ein und lade dein Zertifikat mit Bearbeitungszeit
+            und Fehlerquote herunter. Der Name landet nur in der PDF – er wird
+            weder gespeichert noch übertragen.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <label className="sr-only" htmlFor="cert-name">
+              Name für das Zertifikat
+            </label>
+            <input
+              id="cert-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Vor- und Nachname"
+              autoComplete="name"
+              className="min-h-[48px] flex-1 basis-52 rounded-xl border border-line bg-white px-4 text-[0.95rem] placeholder:text-text-muted/60"
+            />
+            <button
+              type="button"
+              disabled={!name.trim() || busy}
+              onClick={onCertificate}
+              className="min-h-[48px] rounded-full border-2 border-accent px-5 text-[0.95rem] font-bold text-accent transition-colors hover:bg-cream-warm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? "Wird erstellt …" : "Zertifikat als PDF"}
+            </button>
+          </div>
+        </div>
 
         <button
           type="button"

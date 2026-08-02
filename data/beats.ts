@@ -2,23 +2,29 @@
  * Fachliche Quelle: alte Moodle-Kursseite
  * `Old Moodle Kurs/6_Kamera vorbereiten/Objektiv wechseln.html` (FX30).
  *
- * Die 13 Schritte der Quelle sind zu Situationen gebündelt, dazwischen drei
+ * Die 13 Schritte der Quelle sind zu Situationen gebündelt, dazwischen zwei
  * eingewobene Mikro-Checks (choice), die das „Warum" abrufen (Testing-Effekt).
  * Zwischen den Situationen ist die Reihenfolge streng – jeder Übergang hat eine
  * Sicherheitslogik, die in der Quelle begründet ist. Innerhalb einer Situation
  * ist die Reihenfolge frei, sofern sie nicht physisch zwingend ist (`ordered`).
  *
- * Mapping Quelle → Situation:
- *   1        → vorbereiten
+ * Mapping Quelle → Situation (Reihenfolge nach Beobachtungsstudie 01.08.2026:
+ * erst die Kamera sichern, dann das Wechselobjektiv vorbereiten – das Objektiv
+ * erscheint erst, wenn die Kamera aus und ihr Frontdeckel montiert ist, siehe
+ * `spareRevealed`):
  *   2        → sichern
  *   3, 4     → freimachen   (frei)
+ *   1        → vorbereiten  (Wechselobjektiv wird erst hier sichtbar)
  *   5        → haltung      (Mikro-Check: Warum nach unten?)
- *   —        → statuscheck  (Mikro-Check: Kamera-Status vor dem Öffnen)
  *   6, 7     → abnehmen     (zwingend geordnet)
  *   8        → offen
  *   —        → ausrichten   (Mikro-Check: Woran ausrichten?)
  *   9, 10    → einsetzen    (zwingend geordnet)
  *   11,12,13 → aufraeumen   (frei)
+ *
+ * Der frühere Mikro-Check „statuscheck" (Kamera-Status vor dem Öffnen) ist nach
+ * der Beobachtungsstudie vom 01.08.2026 entfallen: reiner Doppel-Abruf ohne
+ * neuen Sachinhalt, direkt nach „haltung" redundant.
  *
  * Fehlhandlungen (F1–F3) leben in der Szene bzw. in den Mikro-Checks. Sie führen
  * zu einer ehrlichen Konsequenz-Rückmeldung und werden dann zurückgenommen –
@@ -48,6 +54,15 @@ export const initialScene: SceneState = {
   oldLens: "mounted",
   spareLens: "safe",
 };
+
+/**
+ * Ab wann das Wechselobjektiv (samt Beschriftung) auf der Ablagefläche erscheint:
+ * erst, wenn die Kamera gesichert ist – aus und Frontdeckel montiert. Vorher wäre
+ * es ein Distraktor in einem Schritt, in dem es noch gar nicht dran ist.
+ */
+export function spareRevealed(s: SceneState): boolean {
+  return s.power === "off" && s.frontCapOld === "on";
+}
 
 /** Anklickbare Elemente in der Szene. */
 export type HotspotId =
@@ -130,34 +145,6 @@ export const intro = {
 export const beats: Beat[] = [
   {
     kind: "grip",
-    id: "vorbereiten",
-    title: "Vorbereiten",
-    prompt:
-      "Das Wechselobjektiv liegt bereit – noch mit beiden Deckeln. Mach es startklar, bevor du die Kamera überhaupt anfasst.",
-    focus: { x: 422, y: 228, scale: 1.0 }, // Establishing: ganze Werkbank, nicht reingezoomt
-    // Quelle 1: „Wechselobjektiv vorbereiten: (nur) hintere Objektivdeckel entfernen
-    // und Objektiv auf sicherer Fläche bereitstellen bzw einem Teammitglied in die Hand geben."
-    targets: [
-      {
-        hotspot: "rear-cap-spare",
-        label: "Hinteren Deckel abnehmen",
-        why: "Der hintere Deckel muss weg, sonst passt das Objektiv nicht ans Bajonett. Jetzt liegt es startklar – der Body bleibt später nur kurz offen.",
-        apply: (s) => ({ ...s, rearCapSpare: "tray" }),
-      },
-    ],
-    corrections: [
-      {
-        hotspot: "front-cap-spare",
-        text: "Der vordere Deckel bleibt vorerst drauf – er schützt die Frontlinse, bis das Objektiv sitzt. Ganz zum Schluss kommt er ab.",
-      },
-      {
-        hotspot: "front-cap-old",
-        text: "Dieser Deckel gehört auf die Kamera, die gerade noch läuft – der kommt gleich dran. Erst ist das Wechselobjektiv an der Reihe.",
-      },
-    ],
-  },
-  {
-    kind: "grip",
     id: "sichern",
     title: "Kamera sichern",
     prompt: "Die FX30 läuft noch. Bevor irgendetwas am Bajonett passiert:",
@@ -192,8 +179,38 @@ export const beats: Beat[] = [
       {
         hotspot: "front-cap-old",
         label: "Vorderen Deckel schließen",
-        why: "Vorderer Deckel zu – das beugt Fingerabdrücken auf der Frontlinse vor.",
+        why: "Vorderer Deckel zu – das beugt Fingerabdrücken auf der Frontlinse vor. Und jetzt, wo die Kamera gesichert ist: Das Wechselobjektiv liegt bereit.",
         apply: (s) => ({ ...s, frontCapOld: "on" }),
+      },
+    ],
+  },
+  {
+    kind: "grip",
+    id: "vorbereiten",
+    title: "Wechselobjektiv vorbereiten",
+    prompt:
+      "Die Kamera ist gesichert – jetzt liegt das Wechselobjektiv bereit, noch mit beiden Deckeln. Mach es startklar, bevor der Body aufgeht.",
+    focus: { x: 422, y: 228, scale: 1.0 }, // Establishing: ganze Werkbank, nicht reingezoomt
+    // Quelle 1: „Wechselobjektiv vorbereiten: (nur) hintere Objektivdeckel entfernen
+    // und Objektiv auf sicherer Fläche bereitstellen bzw einem Teammitglied in die Hand geben."
+    // Nach der Beobachtungsstudie 01.08.2026 hinter „sichern"/„freimachen" gezogen:
+    // erst die laufende Kamera sichern, dann das neue Glas anfassen.
+    targets: [
+      {
+        hotspot: "rear-cap-spare",
+        label: "Hinteren Deckel abnehmen",
+        why: "Der hintere Deckel muss weg, sonst passt das Objektiv nicht ans Bajonett. Jetzt liegt es startklar – der Body bleibt später nur kurz offen.",
+        apply: (s) => ({ ...s, rearCapSpare: "tray" }),
+      },
+    ],
+    corrections: [
+      {
+        hotspot: "front-cap-spare",
+        text: "Der vordere Deckel bleibt vorerst drauf – er schützt die Frontlinse, bis das Objektiv sitzt. Ganz zum Schluss kommt er ab.",
+      },
+      {
+        hotspot: "front-cap-old",
+        text: "Der bleibt zu – er schützt die Frontlinse des alten Objektivs bis zur sicheren Ablage.",
       },
     ],
   },
@@ -226,36 +243,6 @@ export const beats: Beat[] = [
         preview: (s) => ({ ...s, tilt: "down" }),
         verdict: "ok",
         text: "Richtig. Was jetzt fällt, fällt aus dem Body heraus – nicht hinein.",
-      },
-    ],
-  },
-  {
-    kind: "choice",
-    id: "statuscheck",
-    title: "Gegencheck",
-    prompt: "Gleich löst du den Verschluss. Zwei Dinge müssen jetzt beide stimmen.",
-    question: "Welche beiden sind es?",
-    focus: { x: 422, y: 228, scale: 1.0 },
-    // Abruf zu Quelle 2/5 – kein neuer Sachinhalt.
-    options: [
-      {
-        label: "Kamera aus und Öffnung nach unten",
-        preview: (s) => s,
-        verdict: "ok",
-        text: "Genau diese beiden: Die Kamera ist aus, und die Öffnung zeigt nach unten. Jetzt darf der Body auf.",
-      },
-      {
-        label: "Nur die Neigung – laufen darf sie",
-        preview: (s) => ({ ...s, power: "on" }),
-        verdict: "trap",
-        trap: "F3",
-        text: trapText.F3,
-      },
-      {
-        label: "Nur ausschalten – die Neigung ist egal",
-        preview: (s) => ({ ...s, tilt: "level" }),
-        verdict: "soft",
-        text: "Ausschalten allein reicht nicht. Bei waagrechter oder aufwärts gerichteter Öffnung fällt Staub hinein – beides muss stimmen.",
       },
     ],
   },
@@ -411,3 +398,12 @@ export const beats: Beat[] = [
 ];
 
 export const TOTAL_BEATS = beats.length;
+
+/**
+ * Pflicht-Handgriffe eines sauberen Durchlaufs: alle Griffe plus je eine
+ * Entscheidung pro Mikro-Check. Bezugsgröße für die Fehlerquote im Zertifikat.
+ */
+export const TOTAL_ACTIONS = beats.reduce(
+  (n, b) => n + (b.kind === "grip" ? b.targets.length : 1),
+  0,
+);

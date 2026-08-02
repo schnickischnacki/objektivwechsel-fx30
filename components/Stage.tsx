@@ -83,15 +83,25 @@ export default function Stage({
   scene,
   focus,
   live,
+  spareVisible,
   onGrip,
 }: {
   scene: SceneState;
   focus: { x: number; y: number; scale: number };
   live: HotspotId[];
+  /** Wechselobjektiv samt Deckeln und Beschriftung erst zeigen, wenn die Kamera gesichert ist. */
+  spareVisible: boolean;
   onGrip: (id: HotspotId) => void;
 }) {
   const tilt = TILT[scene.tilt];
   const shift = TILT_SHIFT[scene.tilt];
+
+  // Sanftes Einblenden statt hartem Umschalten; unsichtbar auch klickdurchlässig.
+  const spareStyle: React.CSSProperties = {
+    opacity: spareVisible ? 1 : 0,
+    transition: "opacity 700ms ease",
+    pointerEvents: spareVisible ? undefined : "none",
+  };
   const bodyOpen = scene.oldLens !== "mounted" && scene.spareLens === "safe";
   const k = focus.scale;
 
@@ -191,7 +201,15 @@ export default function Stage({
           strokeWidth="2"
           strokeDasharray="7 5"
         />
-        <text x="613" y="92" textAnchor="middle" fill="#a99a86" fontSize="11" letterSpacing="1.4">
+        <text
+          x="613"
+          y="92"
+          textAnchor="middle"
+          fill="#a99a86"
+          fontSize="11"
+          letterSpacing="1.4"
+          style={spareStyle}
+        >
           WECHSELOBJEKTIV
         </text>
 
@@ -288,18 +306,20 @@ export default function Stage({
           <Lens tone="old" indexOn={false} />
         </Piece>
 
-        {/* --- Wechselobjektiv ----------------------------------------- */}
-        <Piece pose={spareLensPose}>
-          <Hotspot
-            id="spare-lens"
-            live={live.includes("spare-lens")}
-            onGrip={onGrip}
-            label="Wechselobjektiv ansetzen"
-            hint={LENS_HINT}
-          >
-            <Lens tone="spare" indexOn={scene.spareLens !== "safe"} locked={scene.spareLens === "locked"} />
-          </Hotspot>
-        </Piece>
+        {/* --- Wechselobjektiv (erscheint erst nach gesicherter Kamera) -- */}
+        <g style={spareStyle}>
+          <Piece pose={spareLensPose}>
+            <Hotspot
+              id="spare-lens"
+              live={live.includes("spare-lens")}
+              onGrip={onGrip}
+              label="Wechselobjektiv ansetzen"
+              hint={LENS_HINT}
+            >
+              <Lens tone="spare" indexOn={scene.spareLens !== "safe"} locked={scene.spareLens === "locked"} />
+            </Hotspot>
+          </Piece>
+        </g>
 
         {/* Altes Objektiv als Griff, sobald es lose ist */}
         {scene.oldLens === "loose" && (
@@ -343,29 +363,31 @@ export default function Stage({
           </Hotspot>
         </Piece>
 
-        <Piece pose={rearCapSparePose}>
-          <Hotspot
-            id="rear-cap-spare"
-            live={live.includes("rear-cap-spare")}
-            onGrip={onGrip}
-            label="Hinterer Objektivdeckel"
-            hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
-          >
-            <Cap label="H" spin={rearCapSparePose.rotate} />
-          </Hotspot>
-        </Piece>
+        <g style={spareStyle}>
+          <Piece pose={rearCapSparePose}>
+            <Hotspot
+              id="rear-cap-spare"
+              live={live.includes("rear-cap-spare")}
+              onGrip={onGrip}
+              label="Hinterer Objektivdeckel"
+              hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
+            >
+              <Cap label="H" spin={rearCapSparePose.rotate} />
+            </Hotspot>
+          </Piece>
 
-        <Piece pose={frontCapSparePose}>
-          <Hotspot
-            id="front-cap-spare"
-            live={live.includes("front-cap-spare")}
-            onGrip={onGrip}
-            label="Vorderer Deckel des Wechselobjektivs"
-            hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
-          >
-            <Cap label="V" spin={frontCapSparePose.rotate} />
-          </Hotspot>
-        </Piece>
+          <Piece pose={frontCapSparePose}>
+            <Hotspot
+              id="front-cap-spare"
+              live={live.includes("front-cap-spare")}
+              onGrip={onGrip}
+              label="Vorderer Deckel des Wechselobjektivs"
+              hint={{ cx: 0, cy: 0, rx: 22, ry: 50 }}
+            >
+              <Cap label="V" spin={frontCapSparePose.rotate} />
+            </Hotspot>
+          </Piece>
+        </g>
 
         {/* --- Drehen --------------------------------------------------- */}
         {/* Beide Drehrichtungen sind nur bei nach unten gehaltener Kamera dran; dort

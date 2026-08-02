@@ -8,6 +8,7 @@ import {
   TOTAL_BEATS,
   beats,
   intro,
+  spareRevealed,
   type HotspotId,
   type SceneState,
 } from "@/data/beats";
@@ -143,7 +144,7 @@ export default function ObjektivwechselWidget() {
 
             <p className="mb-5 border-l-2 border-line pl-3 font-serif text-[0.88rem] italic text-text-muted sm:text-[0.95rem]">
               „Der Sensor ist das Herz der Kamera. Wenn du ihn anfasst, hat er ein
-              Problem – und du gleich mit.“ – Peter Z.
+              Problem – und du gleich mit.“ – unbekannt, HS Ansbach
             </p>
 
             <button
@@ -169,7 +170,7 @@ export default function ObjektivwechselWidget() {
         </h1>
         <p className="font-serif text-[0.8rem] italic text-text-muted sm:text-sm">
           „Der Sensor ist das Herz der Kamera. Wenn du ihn anfasst, hat er ein
-          Problem – und du gleich mit.“ – Peter Z.
+          Problem – und du gleich mit.“ – unbekannt, HS Ansbach
         </p>
       </header>
 
@@ -220,13 +221,32 @@ export default function ObjektivwechselWidget() {
           </div>
 
           {/* Bühne */}
-          <div className="overflow-hidden rounded-2xl border border-line bg-cream-warm shadow-[var(--shadow-soft)]">
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-cream-warm shadow-[var(--shadow-soft)]">
             <Stage
               scene={shownScene}
               focus={shownFocus}
               live={consequence ? [] : live}
+              spareVisible={spareRevealed(state.scene)}
               onGrip={onGrip}
             />
+            {/* Direktes lokales Fehler-Feedback: Solange die Fehlhandlung gezeigt
+                wird (und die Klickstellen deaktiviert sind), lenkt ein rotes
+                Ausrufezeichen mitten in der Arbeitsfläche die Aufmerksamkeit auf
+                den Hinweistext darunter. Nur bei Fehlgriffen in der Szene – bei
+                den Mikro-Checks liegt der Blick ohnehin unten bei den Optionen. */}
+            {consequence != null && beat?.kind === "grip" && (
+              <motion.div
+                aria-hidden
+                initial={{ scale: 0.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 380, damping: 18 }}
+                className="pointer-events-none absolute inset-0 flex items-center justify-center"
+              >
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-danger font-serif text-4xl font-bold text-white shadow-[0_4px_18px_rgba(163,46,34,0.45)]">
+                  !
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Handlungsebene */}
