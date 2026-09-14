@@ -94,7 +94,7 @@ export type Correction = {
   when?: (s: SceneState) => boolean;
 };
 
-/** Die drei kanonischen Fehlhandlungen. Nur sie zählen als Ausrutscher. */
+/** Die drei kanonischen Fehlhandlungen mit sichtbarer Konsequenz. (Korrekturen zählen seit 14.09.2026 als kleiner Ausrutscher „K", siehe engine.ts.) */
 export type TrapId = "F1" | "F2" | "F3";
 
 export const trapText: Record<TrapId, string> = {
@@ -239,7 +239,7 @@ export const beats: Beat[] = [
         label: "Waagrecht",
         preview: (s) => ({ ...s, tilt: "level" }),
         verdict: "soft",
-        text: "Besser als nach oben – aber Staub schwebt weiter in die Öffnung. Der Kurs sagt „eher nach unten“, nicht „egal“.",
+        text: "Besser als nach oben – aber Staub schwebt weiter in die Öffnung.",
       },
       {
         label: "Nach unten geneigt",

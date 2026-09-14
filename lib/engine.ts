@@ -9,14 +9,17 @@ import {
   trapText,
 } from "@/data/beats";
 
-export type Slip = { trap: TrapId; text: string };
+/** "K" = kleiner Ausrutscher: ein Griff, der nicht dran war, oder eine halbrichtige Wahl.
+ *  Seit 14.09.2026 zählen auch sie (Usability-Test TP1: Fehlgriff am vorderen Deckel und
+ *  „Waagrecht" blieben sonst ohne Spur in der Bilanz). */
+export type Slip = { trap: TrapId | "K"; text: string };
 
 export type GameState = {
   beatIndex: number;
   /** Hotspots der in dieser Situation bereits erledigten Griffe */
   hit: HotspotId[];
   scene: SceneState;
-  /** Ausrutscher (F1–F3): ehrliche Konsequenz, dann geht es korrigiert weiter. */
+  /** Ausrutscher: F1–F3 mit Konsequenz, K als sanfte Korrektur – alle zählen in der Bilanz. */
   slips: Slip[];
   startedAt: number | null;
   finishedAt: number | null;
@@ -129,7 +132,10 @@ export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
 
   const correction = activeCorrections(s).find((c) => c.hotspot === hotspot);
   if (correction) {
-    return [{ ...s, startedAt }, { type: "correction", text: correction.text }];
+    return [
+      { ...s, slips: [...s.slips, { trap: "K", text: correction.text }], startedAt },
+      { type: "correction", text: correction.text },
+    ];
   }
 
   return [s, { type: "idle" }];
@@ -161,7 +167,10 @@ export function choose(s: GameState, optionIndex: number): [GameState, Reaction]
   }
 
   if (option.verdict === "soft") {
-    return [{ ...s, startedAt }, { type: "correction", text: option.text }];
+    return [
+      { ...s, slips: [...s.slips, { trap: "K", text: option.text }], startedAt },
+      { type: "correction", text: option.text },
+    ];
   }
 
   const beatIndex = s.beatIndex + 1;

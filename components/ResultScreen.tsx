@@ -65,7 +65,7 @@ export default function ResultScreen({
           {seconds != null && <Stat label="Zeit" value={`${seconds} s`} />}
           {best != null && (
             <Stat
-              label="Dein bisher bester Lauf"
+              label="Bester Lauf auf diesem Gerät"
               value={
                 best.seconds != null
                   ? `${best.errors} Ausrutscher · ${best.seconds} s`
