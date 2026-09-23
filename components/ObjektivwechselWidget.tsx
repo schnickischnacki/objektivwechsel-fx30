@@ -517,7 +517,7 @@ function Aufgabenkarte({
           <b className={fehlerBisher ? "text-danger" : "text-text"}>{fehlerBisher}</b> Fehler bisher
         </span>
         <span>
-          <b className="text-text">{umwegeBisher}</b> Umwege (zählen nicht)
+          <b className="text-text">{umwegeBisher}</b> {umwegeBisher === 1 ? "Umweg" : "Umwege"} (zählen nicht)
         </span>
       </p>
     </motion.section>
@@ -686,7 +686,7 @@ function Einfuehrung({
             )}
             {best && (
               <p className="text-[0.8rem] text-text-muted">
-                Bester Lauf auf diesem Gerät: {best.errors} Fehler · {best.detours} Umwege
+                Bester Lauf auf diesem Gerät: {best.errors} Fehler · {best.detours} {best.detours === 1 ? "Umweg" : "Umwege"}
                 {best.seconds != null ? ` · ${best.seconds} s` : ""}
               </p>
             )}

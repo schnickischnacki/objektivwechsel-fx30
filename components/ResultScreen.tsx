@@ -164,7 +164,7 @@ export default function ResultScreen({
 }
 
 function bestText(best: BestResult): string {
-  return `Bester Lauf auf diesem Gerät: ${best.errors} Fehler, ${best.detours} Umwege${best.seconds != null ? `, ${best.seconds} s` : ""}`;
+  return `Bester Lauf auf diesem Gerät: ${best.errors} Fehler, ${best.detours} ${best.detours === 1 ? "Umweg" : "Umwege"}${best.seconds != null ? `, ${best.seconds} s` : ""}`;
 }
 
 function Stat({

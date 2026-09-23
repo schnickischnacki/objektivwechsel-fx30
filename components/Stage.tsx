@@ -607,14 +607,14 @@ function labelAt(
     case "front-cap-old": {
       if (scene.frontCapOld === "off") return { x: TRAY.frontCapOld.x, y: TRAY.frontCapOld.y - 50 };
       const p = att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt, shift);
-      return { x: p.x, y: p.y + 62 };
+      return { x: p.x - 14, y: p.y + 62 };
     }
     case "rear-cap-spare":
       if (scene.rearCapSpare === "spare") return { x: SAFE_SPARE.x, y: SAFE_SPARE.y - CAP_GAP - 30 };
       if (scene.rearCapSpare === "tray") return { x: TRAY.rearCapSpare.x - 8, y: TRAY.rearCapSpare.y - 48 };
       return null;
     case "front-cap-spare": {
-      if (scene.spareLens === "safe") return { x: SAFE_SPARE.x, y: SAFE_SPARE.y + CAP_GAP + 34 };
+      if (scene.spareLens === "safe") return { x: SAFE_SPARE.x + 16, y: SAFE_SPARE.y + CAP_GAP + 34 };
       const p = att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt, shift);
       return { x: p.x, y: p.y - 56 };
     }
