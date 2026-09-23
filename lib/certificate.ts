@@ -112,13 +112,13 @@ export async function downloadCertificate(data: CertificateData): Promise<void> 
   );
   doc.text("Der Sensor war zu keinem Zeitpunkt in Gefahr.", CX, 102, { align: "center" });
 
-  // Kennzahlen
+  // Kennzahlen. Keine Fehlerzahl: Das Zertifikat gibt es nur ohne Fehler, eine „0“
+  // wäre auf jeder Urkunde dieselbe und sagt nichts (Hinweis Niklas, 23.09.2026).
   const stats: { label: string; value: string; sub?: string }[] = [
     { label: "Schritte", value: `${TOTAL_BEATS} von ${TOTAL_BEATS}`, sub: "vorbereiten, wechseln, abschließen" },
-    { label: "Fehler", value: "0", sub: "Sensor nie gefährdet" },
     { label: "Bearbeitungszeit", value: formatTime(data.seconds) },
   ];
-  const BOX_W = 64;
+  const BOX_W = 72;
   const BOX_H = 30;
   const GAP = 8;
   const totalW = stats.length * BOX_W + (stats.length - 1) * GAP;
