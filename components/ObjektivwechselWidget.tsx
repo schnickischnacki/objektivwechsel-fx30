@@ -612,7 +612,7 @@ function Einfuehrung({
   onStart: () => void;
   onNeu: () => void;
 }) {
-  const icons = { hand: Hand, frage: CircleHelp, fehler: TriangleAlert, zertifikat: Award } as const;
+  const icons = { hand: Hand, frage: CircleHelp, umweg: Undo2, zertifikat: Award } as const;
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-[760px] items-center justify-center p-3 sm:p-6">
       <motion.section
@@ -627,26 +627,6 @@ function Einfuehrung({
           <h1 className="mb-3 text-[1.45rem] font-semibold leading-tight tracking-tight sm:text-[1.6rem]">{intro.title}</h1>
           <p className="mb-3 leading-relaxed">{intro.lead}</p>
           <p className="mb-4 leading-relaxed text-text-muted">{intro.body}</p>
-
-          {/* Ablauf auf einen Blick */}
-          <div className="mb-4 grid gap-2 sm:grid-cols-[3fr_5fr_1.6fr]">
-            {PHASES.map((phase) => (
-              <div key={phase} className="rounded-xl border border-line bg-cream p-2.5">
-                <p className="mb-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-text-muted">{phaseTitle[phase]}</p>
-                <ol className="grid gap-0.5">
-                  {beats.map((b, i) =>
-                    b.phase === phase ? (
-                      <li key={b.id} className="flex items-center gap-1.5 text-[0.82rem]">
-                        <span className="font-mono text-[0.72rem] text-text-muted">{i + 1}</span>
-                        {b.short}
-                        {b.kind === "choice" && <CircleHelp size={13} className="text-accent" aria-label="Frage" />}
-                      </li>
-                    ) : null,
-                  )}
-                </ol>
-              </div>
-            ))}
-          </div>
 
           <ul className="mb-5 grid gap-2.5">
             {intro.how.map((h) => {

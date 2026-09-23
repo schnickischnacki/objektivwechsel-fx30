@@ -161,7 +161,7 @@ export const intro = {
   how: [
     { icon: "hand", text: "Bei den meisten Schritten handelst du im Bild. Markiert ist alles, was du anfassen kannst – nicht nur das Richtige." },
     { icon: "frage", text: "Zwei Schritte sind kurze Fragen. Du beantwortest sie neben dem Bild." },
-    { icon: "fehler", text: "Gefährdest du den Sensor, ist das ein Fehler. Ein Griff, der nur gerade nicht dran ist, ist ein Umweg und zählt nicht." },
+    { icon: "umweg", text: "Ein Griff, der nur gerade nicht dran ist, ist ein Umweg und zählt nicht." },
     { icon: "zertifikat", text: "Das Zertifikat gibt es für einen Durchlauf ohne Fehler." },
   ],
   cta: "Übung starten",
