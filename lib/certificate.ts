@@ -1,4 +1,4 @@
-import { TOTAL_ACTIONS } from "@/data/beats";
+import { TOTAL_BEATS } from "@/data/beats";
 
 /**
  * Zertifikat als PDF, komplett im Browser erzeugt (jsPDF, dynamisch geladen –
@@ -7,10 +7,14 @@ import { TOTAL_ACTIONS } from "@/data/beats";
  * geschrieben – nichts davon wird gespeichert oder an einen Server geschickt.
  */
 
+/**
+ * Das Zertifikat gibt es nur für einen Durchlauf ohne Fehler, also ohne dass der
+ * Sensor gefährdet war (Mikro-Iteration nach dem Usability-Test: B10 „zu leicht
+ * verdient", B17 „Fehler auf der Urkunde"). Umwege stehen deshalb nicht darauf.
+ */
 export type CertificateData = {
   name: string;
   seconds: number | null;
-  errors: number;
 };
 
 /* Design-Tokens der App als RGB – identisch zu globals.css. */
@@ -24,16 +28,6 @@ function formatTime(seconds: number | null): string {
   if (seconds == null) return "–";
   if (seconds < 60) return `${seconds} s`;
   return `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
-}
-
-/** Fehlerquote = Ausrutscher / (Pflicht-Handgriffe + Ausrutscher). */
-export function errorRate(errors: number): { attempts: number; percent: string } {
-  const attempts = TOTAL_ACTIONS + errors;
-  const percent = ((errors / attempts) * 100)
-    .toFixed(1)
-    .replace(".", ",")
-    .replace(/,0$/, "");
-  return { attempts, percent: `${percent} %` };
 }
 
 function slugify(name: string): string {
@@ -107,35 +101,29 @@ export async function downloadCertificate(data: CertificateData): Promise<void> 
     month: "2-digit",
     year: "numeric",
   });
-  const { attempts, percent } = errorRate(data.errors);
-
   doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
   doc.setTextColor(...MUTED);
   doc.text(
-    `hat am ${date} die interaktive Übung zum Objektivwechsel absolviert` +
-      (data.errors === 0 ? " – ein sauberer Durchlauf." : "."),
+    `hat am ${date} den Objektivwechsel in der Übung fehlerfrei durchgeführt:`,
     CX,
     96,
     { align: "center" },
   );
+  doc.text("Der Sensor war zu keinem Zeitpunkt in Gefahr.", CX, 102, { align: "center" });
 
   // Kennzahlen
   const stats: { label: string; value: string; sub?: string }[] = [
+    { label: "Schritte", value: `${TOTAL_BEATS} von ${TOTAL_BEATS}`, sub: "vorbereiten, wechseln, abschließen" },
+    { label: "Fehler", value: "0", sub: "Sensor nie gefährdet" },
     { label: "Bearbeitungszeit", value: formatTime(data.seconds) },
-    {
-      label: "Ausrutscher",
-      value: String(data.errors),
-      sub: `bei ${attempts} Handgriffen`,
-    },
-    { label: "Fehlerquote", value: percent, sub: "Ausrutscher / Handgriffe" },
   ];
   const BOX_W = 64;
   const BOX_H = 30;
   const GAP = 8;
   const totalW = stats.length * BOX_W + (stats.length - 1) * GAP;
   let x = CX - totalW / 2;
-  const y = 112;
+  const y = 116;
   for (const s of stats) {
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...LINE);

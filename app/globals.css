@@ -12,6 +12,12 @@
   --text-muted: #4a5566;
   --danger: #a32e22;
   --danger-bg: #fbe6e3;
+  --ok: #1f6b3f;
+  --ok-bg: #e6f2ea;
+  --ok-line: #bcd9c8;
+  --warn: #8a5a12;
+  --warn-bg: #fdf3e2;
+  --warn-line: #ecd3a8;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
@@ -34,6 +40,12 @@
   --color-text-muted: var(--text-muted);
   --color-danger: var(--danger);
   --color-danger-bg: var(--danger-bg);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-ok-line: var(--ok-line);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-line: var(--warn-line);
 
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);
@@ -43,6 +55,11 @@
 html,
 body {
   min-height: 100dvh;
+}
+
+/* Usability-Test B22: Schrift in der Übung zu klein. Alle rem-Größen wachsen mit. */
+html {
+  font-size: 106.25%;
 }
 
 body {

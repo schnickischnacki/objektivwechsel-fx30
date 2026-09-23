@@ -2,10 +2,17 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import { Award, Check, Download, RotateCcw, TriangleAlert, Undo2 } from "lucide-react";
+import { beats, trapNachlesen, type TrapId } from "@/data/beats";
 import { downloadCertificate } from "@/lib/certificate";
-import type { Slip } from "@/lib/engine";
+import { fehler, umwege, type Slip } from "@/lib/engine";
 import type { BestResult } from "@/lib/storage";
 
+/**
+ * Abschlusskarte. Seit der Mikro-Iteration nach dem Usability-Test trennt sie
+ * Fehler (Sensor gefährdet) von Umwegen (Griff war gerade nicht dran) und
+ * verweist bei jedem Punkt auf die Stelle im Kurs, an der er steht (B16, B17).
+ */
 export default function ResultScreen({
   slips,
   seconds,
@@ -17,134 +24,207 @@ export default function ResultScreen({
   best: BestResult | null;
   onAgain: () => void;
 }) {
-  const clean = slips.length === 0;
+  const f = fehler(slips);
+  const u = umwege(slips);
+  const sauber = f.length === 0;
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [gespeichert, setGespeichert] = useState(false);
 
   async function onCertificate() {
-    if (!name.trim() || busy) return;
+    if (!name.trim() || busy || !sauber) return;
     setBusy(true);
     try {
-      await downloadCertificate({
-        name: name.trim(),
-        seconds,
-        errors: slips.length,
-      });
+      await downloadCertificate({ name: name.trim(), seconds });
+      setGespeichert(true);
     } finally {
       setBusy(false);
     }
   }
 
+  // Gleiche Hinweise nur einmal zeigen
+  const einmal = (liste: Slip[]) => {
+    const gesehen = new Set<string>();
+    return liste.filter((s) => (gesehen.has(s.text) ? false : (gesehen.add(s.text), true)));
+  };
+
   return (
-    <motion.div
+    <motion.section
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="overflow-hidden rounded-2xl border border-line bg-white"
+      className="mx-auto max-w-[860px] overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-card)]"
     >
       <div
         aria-hidden
         className="h-2"
-        style={{
-          background:
-            "repeating-linear-gradient(135deg,#c1651f 0 14px,#fbeada 14px 24px)",
-        }}
+        style={{ background: "repeating-linear-gradient(135deg,#c1651f 0 14px,#fbeada 14px 24px)" }}
       />
-      <div className="p-6">
-        <h2 className="mb-2 text-xl font-semibold">
-          {clean ? "Sauberer Durchlauf." : "Objektiv gewechselt."}
+      <div className="p-5 sm:p-7">
+        <p className="mb-1 text-[0.72rem] font-bold uppercase tracking-[0.14em] text-accent">Alle neun Schritte geschafft</p>
+        <h2 className="mb-2 text-[1.45rem] font-semibold leading-tight">
+          {sauber ? "Sauber gewechselt – der Sensor war nie in Gefahr." : "Objektiv gewechselt – aber der Sensor war in Gefahr."}
         </h2>
-        <p className="mb-5 max-w-[58ch] text-[0.95rem] text-text-muted">
-          {clean
-            ? "Alle Handgriffe gesessen, der Sensor blieb außer Gefahr. Genau so sieht es in der Prüfung aus."
-            : "Der Wechsel ist geschafft – unten steht, wo es gehakt hat. Ein zweiter Durchlauf lohnt sich, bis er sauber ist."}
+        <p className="mb-5 max-w-[60ch] text-text-muted">
+          {sauber
+            ? "Genau diesen Ablauf führst du in der Prüfung vor. Umwege sind Griffe, die gerade nicht dran waren – sie zählen nicht als Fehler."
+            : "Unten steht, wo es gefährlich wurde und wo du es im Kurs nachlesen kannst. Das Zertifikat gibt es für einen Durchlauf ohne Fehler."}
         </p>
 
-        <dl className="mb-5 flex flex-wrap gap-3">
-          <Stat label="Ausrutscher" value={String(slips.length)} />
-          {seconds != null && <Stat label="Zeit" value={`${seconds} s`} />}
-          {best != null && (
-            <Stat
-              label="Bester Lauf auf diesem Gerät"
-              value={
-                best.seconds != null
-                  ? `${best.errors} Ausrutscher · ${best.seconds} s`
-                  : `${best.errors} Ausrutscher`
-              }
-            />
-          )}
+        <dl className="mb-5 grid gap-3 sm:grid-cols-3">
+          <Stat label="Fehler" value={String(f.length)} sub="Sensor gefährdet" tone={sauber ? "ok" : "danger"} />
+          <Stat label="Umwege" value={String(u.length)} sub="zählen nicht" />
+          {seconds != null && <Stat label="Zeit" value={`${seconds} s`} sub={best ? bestText(best) : undefined} />}
         </dl>
 
-        {!clean && (
-          <div className="mb-6 rounded-xl border border-line bg-cream p-4">
-            <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
-              Wo es gehakt hat
-            </p>
-            <ul className="grid gap-1.5">
-              {[...new Set(slips.map((s) => s.text))].map((text) => (
-                <li key={text} className="flex gap-2 text-sm text-text">
-                  <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
-                  {text}
-                </li>
-              ))}
-            </ul>
-          </div>
+        {!sauber && (
+          <Liste
+            titel="Wo der Sensor in Gefahr war"
+            ton="danger"
+            punkte={einmal(f).map((s) => ({ text: s.text, wo: trapNachlesen[s.trap as TrapId] }))}
+          />
+        )}
+        {u.length > 0 && (
+          <Liste
+            titel="Umwege – zum Nachlesen"
+            ton="warn"
+            punkte={einmal(u).map((s) => ({ text: s.text, wo: beats[s.beatIndex]?.nachlesen }))}
+          />
         )}
 
-        {/* Zertifikat: Name wird nur clientseitig in die PDF geschrieben –
-            keine Speicherung, keine Übertragung. */}
-        <div className="mb-6 rounded-xl border border-line bg-cream p-4">
-          <p className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
-            Zertifikat
+        {/* Zertifikat: nur für einen Durchlauf ohne Fehler. Der Name landet nur in der PDF. */}
+        <div className={["mb-6 rounded-xl border p-4", sauber ? "border-ok-line bg-ok-bg" : "border-line bg-cream"].join(" ")}>
+          <p className="mb-1 flex items-center gap-1.5 text-[0.75rem] font-bold uppercase tracking-[0.12em] text-text-muted">
+            <Award size={15} aria-hidden /> Zertifikat
           </p>
-          <p className="mb-3 max-w-[58ch] text-sm text-text-muted">
-            Trag deinen Namen ein und lade dein Zertifikat mit Bearbeitungszeit
-            und Fehlerquote herunter. Der Name landet nur in der PDF – er wird
-            weder gespeichert noch übertragen.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <label className="sr-only" htmlFor="cert-name">
-              Name für das Zertifikat
-            </label>
-            <input
-              id="cert-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Vor- und Nachname"
-              autoComplete="name"
-              className="min-h-[48px] flex-1 basis-52 rounded-xl border border-line bg-white px-4 text-[0.95rem] placeholder:text-text-muted/60"
-            />
-            <button
-              type="button"
-              disabled={!name.trim() || busy}
-              onClick={onCertificate}
-              className="min-h-[48px] rounded-full border-2 border-accent px-5 text-[0.95rem] font-bold text-accent transition-colors hover:bg-cream-warm disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {busy ? "Wird erstellt …" : "Zertifikat als PDF"}
-            </button>
-          </div>
+          {sauber ? (
+            <>
+              <p className="mb-3 max-w-[60ch] text-[0.92rem] text-text">
+                Trag deinen Namen ein und lade dein Zertifikat mit Bearbeitungszeit herunter. Der Name landet nur in der
+                PDF – er wird weder gespeichert noch übertragen.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <label className="sr-only" htmlFor="cert-name">
+                  Name für das Zertifikat
+                </label>
+                <input
+                  id="cert-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setGespeichert(false);
+                  }}
+                  placeholder="Vor- und Nachname"
+                  autoComplete="name"
+                  className="min-h-[48px] flex-1 basis-52 rounded-xl border border-line bg-white px-4 placeholder:text-text-muted/60"
+                />
+                <button
+                  type="button"
+                  disabled={!name.trim() || busy}
+                  onClick={onCertificate}
+                  className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-ok px-5 font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Download size={18} aria-hidden />
+                  {busy ? "Wird erstellt …" : "Zertifikat als PDF"}
+                </button>
+              </div>
+              {gespeichert && (
+                <p role="status" className="mt-2 flex items-center gap-1.5 text-[0.88rem] font-semibold text-ok">
+                  <Check size={16} aria-hidden /> Gespeichert – die PDF liegt in deinem Download-Ordner.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="max-w-[60ch] text-[0.92rem] text-text-muted">
+              Noch nicht: Das Zertifikat bekommst du für einen Durchlauf, in dem der Sensor nie in Gefahr war. Umwege
+              sind dabei erlaubt.
+            </p>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={onAgain}
-          className="min-h-[48px] rounded-full bg-accent px-6 text-base font-bold text-white transition-opacity hover:opacity-90"
-        >
-          Nochmal wechseln
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onAgain}
+            className={[
+              "inline-flex min-h-[48px] items-center gap-2 rounded-full px-6 font-bold transition-opacity hover:opacity-90",
+              sauber ? "border border-line bg-white text-ink" : "bg-accent text-white",
+            ].join(" ")}
+          >
+            <RotateCcw size={18} aria-hidden /> Nochmal wechseln
+          </button>
+          <p className="text-[0.85rem] text-text-muted">
+            Danach kannst du dieses Fenster schließen und im Kurs weitermachen.
+          </p>
+        </div>
       </div>
-    </motion.div>
+    </motion.section>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function bestText(best: BestResult): string {
+  return `Bester Lauf auf diesem Gerät: ${best.errors} Fehler, ${best.detours} Umwege${best.seconds != null ? `, ${best.seconds} s` : ""}`;
+}
+
+function Stat({
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "ok" | "danger";
+}) {
   return (
-    <div className="flex-1 basis-40 rounded-xl border border-line bg-cream p-3">
-      <dt className="text-[0.72rem] uppercase tracking-[0.1em] text-text-muted">
-        {label}
-      </dt>
-      <dd className="mt-1 font-serif text-lg">{value}</dd>
+    <div
+      className={[
+        "rounded-xl border p-3",
+        tone === "ok" ? "border-ok-line bg-ok-bg" : tone === "danger" ? "border-danger bg-danger-bg" : "border-line bg-cream",
+      ].join(" ")}
+    >
+      <dt className="text-[0.72rem] font-bold uppercase tracking-[0.1em] text-text-muted">{label}</dt>
+      <dd className={["mt-0.5 font-serif text-[1.6rem] leading-tight", tone === "danger" ? "text-danger" : tone === "ok" ? "text-ok" : ""].join(" ")}>
+        {value}
+      </dd>
+      {sub && <p className="text-[0.75rem] leading-snug text-text-muted">{sub}</p>}
+    </div>
+  );
+}
+
+function Liste({
+  titel,
+  ton,
+  punkte,
+}: {
+  titel: string;
+  ton: "danger" | "warn";
+  punkte: { text: string; wo?: string }[];
+}) {
+  const Icon = ton === "danger" ? TriangleAlert : Undo2;
+  return (
+    <div
+      className={[
+        "mb-4 rounded-xl border p-4",
+        ton === "danger" ? "border-danger bg-danger-bg" : "border-warn-line bg-warn-bg",
+      ].join(" ")}
+    >
+      <p className={["mb-2 text-[0.75rem] font-bold uppercase tracking-[0.12em]", ton === "danger" ? "text-danger" : "text-warn"].join(" ")}>
+        {titel}
+      </p>
+      <ul className="grid gap-2">
+        {punkte.map((p) => (
+          <li key={p.text} className="flex gap-2 text-[0.92rem] text-text">
+            <Icon size={16} className={["mt-0.5 shrink-0", ton === "danger" ? "text-danger" : "text-warn"].join(" ")} aria-hidden />
+            <span>
+              {p.text}
+              {p.wo && <span className="block text-[0.8rem] text-text-muted">Im Kurs: {p.wo}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -9,18 +9,37 @@ import {
   trapText,
 } from "@/data/beats";
 
-/** "K" = kleiner Ausrutscher: ein Griff, der nicht dran war, oder eine halbrichtige Wahl.
- *  Seit 14.09.2026 zählen auch sie (Usability-Test TP1: Fehlgriff am vorderen Deckel und
- *  „Waagrecht" blieben sonst ohne Spur in der Bilanz). */
-export type Slip = { trap: TrapId | "K"; text: string };
+/**
+ * Zwei Sorten von Abweichungen (Mikro-Iteration nach dem Usability-Test):
+ *  - F1–F3 sind **Fehler**: Sie gefährden den Sensor. Nur sie entscheiden über das Zertifikat.
+ *  - "K" ist ein **Umweg**: ein Griff, der gerade nicht dran war, oder eine halbrichtige
+ *    Wahl. Umwege werden gezeigt und erklärt, zählen aber nicht als Fehler.
+ * Vorher zählte beides gleich als „Ausrutscher" (seit 14.09.2026, Befund B14); TP2 und
+ * TP3 lasen das als Strafe fürs Ausprobieren (B17).
+ */
+export type Slip = { trap: TrapId | "K"; text: string; beatIndex: number };
+
+export function fehler(slips: Slip[]): Slip[] {
+  return slips.filter((s) => s.trap !== "K");
+}
+export function umwege(slips: Slip[]): Slip[] {
+  return slips.filter((s) => s.trap === "K");
+}
+
+/** Abgeschlossener Schritt – für den Rückblick in der Schrittleiste. */
+export type Verlauf = { beatIndex: number; scene: SceneState; notizen: string[] };
 
 export type GameState = {
   beatIndex: number;
   /** Hotspots der in dieser Situation bereits erledigten Griffe */
   hit: HotspotId[];
   scene: SceneState;
-  /** Ausrutscher: F1–F3 mit Konsequenz, K als sanfte Korrektur – alle zählen in der Bilanz. */
+  /** Fehler (F1–F3) und Umwege (K) in der Reihenfolge, in der sie passiert sind. */
   slips: Slip[];
+  /** Was in der laufenden Situation schon erledigt ist (Begründungen der Griffe). */
+  notizen: string[];
+  /** Abgeschlossene Situationen mit ihrem Endzustand. */
+  verlauf: Verlauf[];
   startedAt: number | null;
   finishedAt: number | null;
 };
@@ -38,6 +57,8 @@ export function initialState(): GameState {
     hit: [],
     scene: initialScene,
     slips: [],
+    notizen: [],
+    verlauf: [],
     startedAt: null,
     finishedAt: null,
   };
@@ -104,7 +125,7 @@ export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
   if (trap) {
     // Konsequenz zeigen, Handlung zurücknehmen – die Szene selbst bleibt unverändert.
     return [
-      { ...s, slips: [...s.slips, { trap: trap.trap, text: trapText[trap.trap] }], startedAt },
+      { ...s, slips: [...s.slips, { trap: trap.trap, text: trapText[trap.trap], beatIndex: s.beatIndex }], startedAt },
       {
         type: "trap",
         trap: trap.trap,
@@ -118,11 +139,15 @@ export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
   if (target) {
     const hit = [...s.hit, hotspot];
     const beatDone = hit.length === beat.targets.length;
+    const scene = target.apply(s.scene);
+    const notizen = [...s.notizen, target.why];
     const next: GameState = {
       ...s,
       hit: beatDone ? [] : hit,
       beatIndex: beatDone ? s.beatIndex + 1 : s.beatIndex,
-      scene: target.apply(s.scene),
+      scene,
+      notizen: beatDone ? [] : notizen,
+      verlauf: beatDone ? [...s.verlauf, { beatIndex: s.beatIndex, scene, notizen }] : s.verlauf,
       startedAt,
       finishedAt:
         beatDone && s.beatIndex + 1 >= TOTAL_BEATS ? Date.now() : s.finishedAt,
@@ -133,7 +158,7 @@ export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
   const correction = activeCorrections(s).find((c) => c.hotspot === hotspot);
   if (correction) {
     return [
-      { ...s, slips: [...s.slips, { trap: "K", text: correction.text }], startedAt },
+      { ...s, slips: [...s.slips, { trap: "K", text: correction.text, beatIndex: s.beatIndex }], startedAt },
       { type: "correction", text: correction.text },
     ];
   }
@@ -154,7 +179,7 @@ export function choose(s: GameState, optionIndex: number): [GameState, Reaction]
     return [
       {
         ...s,
-        slips: [...s.slips, { trap: option.trap, text: option.text }],
+        slips: [...s.slips, { trap: option.trap, text: option.text, beatIndex: s.beatIndex }],
         startedAt,
       },
       {
@@ -168,18 +193,21 @@ export function choose(s: GameState, optionIndex: number): [GameState, Reaction]
 
   if (option.verdict === "soft") {
     return [
-      { ...s, slips: [...s.slips, { trap: "K", text: option.text }], startedAt },
+      { ...s, slips: [...s.slips, { trap: "K", text: option.text, beatIndex: s.beatIndex }], startedAt },
       { type: "correction", text: option.text },
     ];
   }
 
   const beatIndex = s.beatIndex + 1;
+  const scene = option.preview(s.scene);
   return [
     {
       ...s,
       beatIndex,
       hit: [],
-      scene: option.preview(s.scene),
+      scene,
+      notizen: [],
+      verlauf: [...s.verlauf, { beatIndex: s.beatIndex, scene, notizen: [`${option.label}: ${option.text}`] }],
       startedAt,
       finishedAt: beatIndex >= TOTAL_BEATS ? Date.now() : s.finishedAt,
     },

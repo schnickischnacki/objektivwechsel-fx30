@@ -97,6 +97,13 @@ export type Correction = {
 /** Die drei kanonischen Fehlhandlungen mit sichtbarer Konsequenz. (Korrekturen zählen seit 14.09.2026 als kleiner Ausrutscher „K", siehe engine.ts.) */
 export type TrapId = "F1" | "F2" | "F3";
 
+/** Wo die Regel hinter einer Fehlhandlung im Kurs steht (Abschnitt 2c). */
+export const trapNachlesen: Record<TrapId, string> = {
+  F1: "Abschnitt 2c, Schritt 4",
+  F2: "Abschnitt 2c, Kasten „Warum die ganze Vorsicht: der Sensor“",
+  F3: "Abschnitt 2c, Schritt 2",
+};
+
 export const trapText: Record<TrapId, string> = {
   // Bewusst ohne Betragsangabe: Die „rund 300 €" aus der Kursbesprechung sind
   // nicht gegengeprüft (Stand 02.08.2026). Qualitativ formuliert wirkt die
@@ -115,9 +122,23 @@ export type Option = {
   text: string;
 };
 
+/** Die drei Abschnitte des Ablaufs – so gliedert sich die Schrittleiste. */
+export type Phase = "vorbereiten" | "wechseln" | "abschliessen";
+
+export const phaseTitle: Record<Phase, string> = {
+  vorbereiten: "Vorbereiten",
+  wechseln: "Wechseln",
+  abschliessen: "Abschließen",
+};
+
 type Common = {
   id: string;
   title: string;
+  /** Kurzname in der Schrittleiste */
+  short: string;
+  phase: Phase;
+  /** Wo man den Schritt im Kurs nachliest (Abschnitt 2c, Stand 02.09.2026) */
+  nachlesen: string;
   /** Die Situation in einem Satz */
   prompt: string;
   /** Bildausschnitt: worauf die Szene zoomt */
@@ -133,14 +154,15 @@ export type Beat =
 
 /** Startkarte vor der Übung: worum es geht und warum es heikel ist. */
 export const intro = {
-  kicker: "Bevor es losgeht",
-  title: "Objektiv wechseln, ohne den Sensor zu ruinieren",
+  kicker: "Übung zu Modul 2 · Drehfertig machen",
+  title: "Objektiv wechseln, ohne den Sensor zu gefährden",
   lead: "Beim Wechsel steht der Body offen – dahinter liegt der Sensor frei. Ein Staubkorn oder Fingerabdruck darauf sieht man in jeder Aufnahme, und eine Reinigung wird teuer.",
-  body: "Deshalb hat der Wechsel eine feste Reihenfolge: vorbereiten, sichern, öffnen, zügig tauschen, aufräumen. Genau die sollst du in der Prüfung vorführen können.",
+  body: "Du gehst den Wechsel an der FX30 in neun Schritten durch: erst die Kamera sichern, dann zügig tauschen, zum Schluss aufräumen. Genau diesen Ablauf führst du in der Prüfung vor.",
   how: [
-    "Tippe die hervorgehobenen Stellen an der Werkbank an.",
-    "Nicht jede anfassbare Stelle ist eine gute Idee.",
-    "Zwischendurch kommen kurze Fragen – die stehen unter dem Bild.",
+    { icon: "hand", text: "Bei den meisten Schritten handelst du im Bild. Markiert ist alles, was du anfassen kannst – nicht nur das Richtige." },
+    { icon: "frage", text: "Zwei Schritte sind kurze Fragen. Du beantwortest sie neben dem Bild." },
+    { icon: "fehler", text: "Gefährdest du den Sensor, ist das ein Fehler. Ein Griff, der nur gerade nicht dran ist, ist ein Umweg und zählt nicht." },
+    { icon: "zertifikat", text: "Das Zertifikat gibt es für einen Durchlauf ohne Fehler." },
   ],
   cta: "Übung starten",
 };
@@ -150,6 +172,9 @@ export const beats: Beat[] = [
     kind: "grip",
     id: "sichern",
     title: "Kamera sichern",
+    short: "Kamera aus",
+    phase: "vorbereiten",
+    nachlesen: "Abschnitt 2c, Schritt 2",
     prompt: "Die FX30 läuft noch. Bevor irgendetwas am Bajonett passiert:",
     focus: { x: 422, y: 228, scale: 1.0 },
     // Quelle 2: „Kamera ausschalten"
@@ -162,11 +187,23 @@ export const beats: Beat[] = [
       },
     ],
     traps: [{ hotspot: "release", trap: "F3" }],
+    // Seit der Mikro-Iteration nach dem Usability-Test (TP3: „jetzt pulsiert ja nur
+    // das, deswegen wird das so richtig sein") hat jeder Handlungsschritt mindestens
+    // zwei markierte Stellen.
+    corrections: [
+      {
+        hotspot: "hood",
+        text: "Erst die Kamera aus – um das Objektiv kümmerst du dich danach.",
+      },
+    ],
   },
   {
     kind: "grip",
     id: "freimachen",
     title: "Objektiv freimachen",
+    short: "Freimachen",
+    phase: "vorbereiten",
+    nachlesen: "Abschnitt 2c, Schritt 3",
     prompt:
       "Zwei Handgriffe, in beliebiger Reihenfolge: Das Objektiv muss sich sicher greifen lassen, die Frontlinse geschützt sein.",
     focus: { x: 422, y: 228, scale: 1.0 },
@@ -186,11 +223,20 @@ export const beats: Beat[] = [
         apply: (s) => ({ ...s, frontCapOld: "on" }),
       },
     ],
+    corrections: [
+      {
+        hotspot: "release",
+        text: "Noch nicht öffnen – erst Sonnenblende ab und Deckel zu, dann das Wechselobjektiv vorbereiten. So bleibt der Body nur kurz offen.",
+      },
+    ],
   },
   {
     kind: "grip",
     id: "vorbereiten",
     title: "Wechselobjektiv vorbereiten",
+    short: "Neues Objektiv",
+    phase: "vorbereiten",
+    nachlesen: "Abschnitt 2c, Schritt 1",
     prompt:
       "Die Kamera ist gesichert – jetzt liegt das Wechselobjektiv bereit, noch mit beiden Deckeln. Mach es startklar, bevor der Body aufgeht.",
     focus: { x: 422, y: 228, scale: 1.0 }, // Establishing: ganze Werkbank, nicht reingezoomt
@@ -221,6 +267,9 @@ export const beats: Beat[] = [
     kind: "choice",
     id: "haltung",
     title: "Haltung",
+    short: "Haltung",
+    phase: "wechseln",
+    nachlesen: "Abschnitt 2c, Schritt 4",
     prompt:
       "Gleich steht der Body offen. Was dann in ihn hineinfällt, bleibt auf dem Sensor.",
     question: "Wie hältst du die Kamera dabei?",
@@ -253,6 +302,9 @@ export const beats: Beat[] = [
     kind: "grip",
     id: "abnehmen",
     title: "Objektiv abnehmen",
+    short: "Abnehmen",
+    phase: "wechseln",
+    nachlesen: "Abschnitt 2c, Schritt 5",
     prompt:
       "Kamera aus, Öffnung nach unten. Jetzt darf das Objektiv runter – zwei Griffe, die aufeinander folgen müssen.",
     focus: { x: 422, y: 228, scale: 1.0 },
@@ -277,8 +329,19 @@ export const beats: Beat[] = [
       {
         hotspot: "rotate-cw",
         text: "Falsche Richtung: Nach rechts wird festgemacht, gelöst wird nach links.",
-        // Drehen geht erst, wenn der Release-Knopf gedrückt ist.
         when: (s) => s.release,
+      },
+      // Vor dem Entriegeln lassen sich beide Drehrichtungen schon anfassen – das
+      // Objektiv sitzt dann aber noch fest.
+      {
+        hotspot: "rotate-ccw",
+        text: "Das Objektiv ist noch verriegelt – erst den Release-Knopf drücken.",
+        when: (s) => !s.release,
+      },
+      {
+        hotspot: "rotate-cw",
+        text: "Das Objektiv ist noch verriegelt – erst den Release-Knopf drücken.",
+        when: (s) => !s.release,
       },
     ],
   },
@@ -286,6 +349,9 @@ export const beats: Beat[] = [
     kind: "grip",
     id: "offen",
     title: "Body offen",
+    short: "Ablegen",
+    phase: "wechseln",
+    nachlesen: "Abschnitt 2c, Schritt 5",
     prompt:
       "Der Sensor liegt frei. Das teuerste Bauteil des Sets, ungeschützt – mach die Hände frei fürs Wechselobjektiv.",
     focus: { x: 422, y: 228, scale: 1.0 },
@@ -304,6 +370,9 @@ export const beats: Beat[] = [
     kind: "choice",
     id: "ausrichten",
     title: "Ausrichten",
+    short: "Ausrichten",
+    phase: "wechseln",
+    nachlesen: "Abschnitt 2c, Schritt 6",
     prompt: "Das Wechselobjektiv muss jetzt rasch rein – der Body steht offen.",
     question: "Woran richtest du den Objektivverschluss am Kamerabody aus?",
     focus: { x: 422, y: 228, scale: 1.0 },
@@ -333,6 +402,9 @@ export const beats: Beat[] = [
     kind: "grip",
     id: "einsetzen",
     title: "Wechselobjektiv einsetzen",
+    short: "Einsetzen",
+    phase: "wechseln",
+    nachlesen: "Abschnitt 2c, Schritt 6",
     prompt:
       "Zügig jetzt – je kürzer der Body offen steht, desto weniger Staub findet den Weg hinein.",
     focus: { x: 422, y: 228, scale: 1.0 },
@@ -371,8 +443,11 @@ export const beats: Beat[] = [
     kind: "grip",
     id: "aufraeumen",
     title: "Aufräumen",
+    short: "Aufräumen",
+    phase: "abschliessen",
+    nachlesen: "Abschnitt 2c, Schritt 7",
     prompt:
-      "Das Objektiv sitzt, der Body ist zu. Drei Griffe fehlen – in beliebiger Reihenfolge.",
+      "Das Objektiv sitzt, der Body ist zu. Jetzt in beide Richtungen aufräumen: das alte Objektiv geschützt verstauen, das neue drehfertig machen. Drei Griffe, Reihenfolge egal.",
     focus: { x: 422, y: 228, scale: 1.0 }, // Überblick: drei Griffe verteilt
     // Quelle 11: „Beim Ursprünglichen Objektiv hinteren Deckel zumachen und sicher verwahren"
     // Quelle 12: „beim neu angebrachten Objektiv Sonnenblende befestigen"

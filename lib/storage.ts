@@ -1,7 +1,9 @@
-const KEY = "objektivwechsel-fx30:v2";
+const KEY = "objektivwechsel-fx30:v3";
 
+/** errors = Fehler (Sensor gefährdet), detours = Umwege. */
 export type BestResult = {
   errors: number;
+  detours: number;
   seconds: number | null;
   at: string; // ISO
 };
@@ -15,7 +17,8 @@ export function loadBest(): BestResult | null {
     if (
       typeof parsed === "object" &&
       parsed !== null &&
-      typeof (parsed as BestResult).errors === "number"
+      typeof (parsed as BestResult).errors === "number" &&
+      typeof (parsed as BestResult).detours === "number"
     ) {
       return parsed as BestResult;
     }
@@ -25,13 +28,15 @@ export function loadBest(): BestResult | null {
   }
 }
 
-/** Speichert nur, wenn besser: weniger Fehler, bei Gleichstand schnellere Zeit. */
+/** Speichert nur, wenn besser: weniger Fehler, dann weniger Umwege, dann schneller. */
 export function saveBest(result: BestResult): BestResult {
   const current = loadBest();
   const better =
     current == null ||
     result.errors < current.errors ||
+    (result.errors === current.errors && result.detours < current.detours) ||
     (result.errors === current.errors &&
+      result.detours === current.detours &&
       result.seconds != null &&
       (current.seconds == null || result.seconds < current.seconds));
 

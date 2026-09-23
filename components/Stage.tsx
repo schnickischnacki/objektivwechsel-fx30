@@ -44,9 +44,9 @@ const CAP_GAP = 62;
    sind deutlich größer und würden sich sonst überlappen. */
 const TRAY = {
   hood: { x: 470, y: 322 },
-  frontCapOld: { x: 570, y: 336 },
-  rearCapSpare: { x: 620, y: 336 },
-  frontCapSpare: { x: 670, y: 336 },
+  frontCapOld: { x: 598, y: 336 },
+  rearCapSpare: { x: 642, y: 336 },
+  frontCapSpare: { x: 684, y: 336 },
 };
 
 type Pose = { x: number; y: number; rotate: number };
@@ -163,9 +163,7 @@ export default function Stage({
       role="group"
       aria-label="Werkbank mit Kamera, Objektiven, Deckeln und Sonnenblende – anfassbare Stellen sind hervorgehoben"
     >
-      {/* Flache Fläche (kein Gradient), damit der Rand links/rechts nahtlos in den
-          gleichfarbigen Container-Hintergrund übergeht, wenn die Höhe begrenzt wird. */}
-      <rect x={VIEW.x} y={VIEW.y} width={VIEW.w} height={VIEW.h} fill="#fbeada" />
+      <Werkstatt />
 
       {/* Zoom auf die Situation. Bewusst ohne motion: SVG-Transform-Origin muss
           gegen den viewBox-Ursprung rechnen (transformBox), sonst verrutscht alles. */}
@@ -177,41 +175,18 @@ export default function Stage({
           transition: "transform 650ms cubic-bezier(0.3, 0, 0.2, 1)",
         }}
       >
-        {/* Werkbankkante – nur unter der Ablageseite. Über die volle Breite würde sie
-            die senkrecht gehaltene Kamera durchschneiden, als steckte sie im Tisch. */}
-        <line x1="388" y1="300" x2={VIEW.x + VIEW.w} y2="300" stroke="#e0d3c2" strokeWidth="2" />
-
-        {/* Ablage-Zone für lose Teile. Liegt rechts, damit die nach unten gehaltene
-            Kamera die linke Hälfte in voller Höhe für sich hat. */}
-        <rect x="388" y="302" width="314" height="78" rx="10" fill="#f1e2d0" opacity="0.6" />
-        <text x="392" y="374" fill="#a99a86" fontSize="11" letterSpacing="1.6">
-          ABLAGE
+        {/* Ablage-Schale für lose Teile, vorn auf der Werkbank. Liegt rechts, damit
+            die nach unten gehaltene Kamera die linke Hälfte für sich hat. */}
+        <rect x="390" y="304" width="312" height="80" rx="14" fill="#e9e5de" stroke="#cfc7ba" strokeWidth="2" />
+        <rect x="398" y="312" width="296" height="64" rx="10" fill="#dedad2" />
+        <text x="404" y="376" fill="#9a8f80" fontSize="10" fontWeight="700" letterSpacing="1.3">
+          DECKEL &amp; SONNENBLENDE
         </text>
 
-        {/* Sichere Fläche mit dem Wechselobjektiv – zwei Stellplätze nebeneinander,
-            weil senkrecht stehende Objektive übereinander nicht hineinpassen. */}
-        <rect
-          x="520"
-          y="100"
-          width="186"
-          height="196"
-          rx="12"
-          fill="#f6f4f0"
-          stroke="#d9cbba"
-          strokeWidth="2"
-          strokeDasharray="7 5"
-        />
-        <text
-          x="613"
-          y="92"
-          textAnchor="middle"
-          fill="#a99a86"
-          fontSize="11"
-          letterSpacing="1.4"
-          style={spareStyle}
-        >
-          WECHSELOBJEKTIV
-        </text>
+        {/* Sichere Fläche: ein weiches Tuch hinten auf der Werkbank. Zwei Stellplätze
+            nebeneinander, weil die Objektive senkrecht auf dem Frontdeckel stehen. */}
+        <path d="M 516 262 L 710 262 L 716 300 L 510 300 Z" fill="#dbe6de" />
+        <path d="M 522 266 L 704 266 L 709 296 L 517 296 Z" fill="none" stroke="#b7cbbd" strokeWidth="1.5" strokeDasharray="5 4" />
 
         {/* Staub – nur wenn die Öffnung nicht nach unten zeigt */}
         {scene.tilt !== "down" && <Dust danger={scene.tilt === "up"} />}
@@ -225,23 +200,20 @@ export default function Stage({
             transition: "transform 520ms cubic-bezier(0.3,0,0.2,1)",
           }}
         >
-          <rect x="196" y="126" width="96" height="26" rx="6" fill="#2b3543" />
-          <rect x="150" y="150" width="182" height="120" rx="14" fill="#1e2530" />
-          <rect x="150" y="196" width="46" height="74" rx="12" fill="#161c25" />
-          <rect x="166" y="164" width="72" height="52" rx="5" fill="#39424f" />
-          <rect x="172" y="170" width="60" height="40" rx="3" fill="#4d5b6e" opacity={scene.power === "on" ? 1 : 0.35} />
+          <Kamerakoerper an={scene.power === "on"} />
 
-          <circle cx="276" cy="139" r="5" fill={scene.power === "on" ? "#e0553f" : "#4a5566"} />
           {/* Statusanzeige, kein Aufdruck: bleibt waagrecht, auch wenn die Kamera
-              senkrecht gehalten wird – hochkant wäre „REC" bzw. „OFF" unlesbar. */}
+              senkrecht gehalten wird – hochkant wäre „ON" bzw. „OFF" unlesbar. */}
+          <circle cx="276" cy="139" r="5" fill={scene.power === "on" ? "#e0553f" : "#4a5566"} />
           <g style={{ transform: `rotate(${-tilt}deg)`, transformBox: "view-box", transformOrigin: "286px 140px" }}>
-            <text x="286" y="144" fill="#9aa3b2" fontSize="11" fontWeight="600">
-              {scene.power === "on" ? "REC" : "OFF"}
+            <text x="286" y="144" fill={scene.power === "on" ? "#f2b8ad" : "#9aa3b2"} fontSize="11" fontWeight="700">
+              {scene.power === "on" ? "ON" : "OFF"}
             </text>
           </g>
 
-          {/* Bajonett + Sensor */}
-          <ellipse cx={MOUNT.x} cy={MOUNT.y} rx="12" ry="48" fill="#39424f" />
+          {/* Bajonett (silberner Ring, von der Seite) + Sensor */}
+          <ellipse cx={MOUNT.x} cy={MOUNT.y} rx="13" ry="52" fill="#b9c1ca" />
+          <ellipse cx={MOUNT.x} cy={MOUNT.y} rx="10" ry="46" fill="#39424f" />
           {bodyOpen && (
             <>
               <ellipse cx={MOUNT.x + 3} cy={MOUNT.y} rx="9" ry="42" fill="#0b0f14" />
@@ -303,7 +275,7 @@ export default function Stage({
 
         {/* --- Ursprüngliches Objektiv --------------------------------- */}
         <Piece pose={oldLensPose}>
-          <Lens tone="old" indexOn={false} />
+          <Lens tone="old" indexOn={false} spin={oldLensPose.rotate} />
         </Piece>
 
         {/* --- Wechselobjektiv (erscheint erst nach gesicherter Kamera) -- */}
@@ -316,7 +288,7 @@ export default function Stage({
               label="Wechselobjektiv ansetzen"
               hint={LENS_HINT}
             >
-              <Lens tone="spare" indexOn={scene.spareLens !== "safe"} locked={scene.spareLens === "locked"} />
+              <Lens tone="spare" indexOn={scene.spareLens !== "safe"} locked={scene.spareLens === "locked"} spin={spareLensPose.rotate} />
             </Hotspot>
           </Piece>
         </g>
@@ -403,6 +375,16 @@ export default function Stage({
             )}
           </g>
         )}
+
+        {/* Namen der markierten Stellen: neutral, für richtige Griffe wie für Fallen
+            gleich. Sie sagen, was das ist – nicht, ob man es anfassen sollte. */}
+        {live
+          .filter((id) => id !== "rotate-ccw" && id !== "rotate-cw")
+          .map((id) => {
+            const at = labelAt(id, scene, tilt, shift);
+            if (!at) return null;
+            return <Namensschild key={id} x={at.x} y={at.y} text={HOTSPOT_NAME[id]} />;
+          })}
       </g>
     </svg>
   );
@@ -434,26 +416,235 @@ function Piece({ pose, children }: { pose: Pose; children: React.ReactNode }) {
   );
 }
 
+/**
+ * Objektiv von der Seite: Bajonett links (Metallring), Zoom- und Fokusring mit
+ * Riffelung, Frontlinse rechts. Altes und Wechselobjektiv unterscheiden sich im
+ * Farbring, damit man sie auf der Ablage auseinanderhält.
+ */
 function Lens({
   tone,
   indexOn,
   locked,
+  spin = 0,
 }: {
   tone: "old" | "spare";
   indexOn: boolean;
   locked?: boolean;
+  /** Drehung des umgebenden Stücks – das Etikett bleibt waagrecht lesbar. */
+  spin?: number;
 }) {
-  const body = tone === "old" ? "#39424f" : "#4a5566";
-  const ring = tone === "old" ? "#525d6d" : "#6b7686";
+  const body = tone === "old" ? "#2f3742" : "#3d4755";
+  const ring = tone === "old" ? "#222932" : "#2c343f";
+  const riffel = tone === "old" ? "#3b4552" : "#4a5566";
+  const band = tone === "old" ? "#aab3bd" : "#e0b04f";
   return (
     <g transform="translate(-55,-42)">
-      <rect x="0" y="0" width="110" height="84" rx="8" fill={body} />
-      <rect x="16" y="10" width="78" height="7" rx="3.5" fill={ring} />
-      <rect x="16" y="67" width="78" height="7" rx="3.5" fill={ring} />
-      <rect x="44" y="17" width="22" height="50" rx="3" fill={ring} opacity="0.5" />
-      <ellipse cx="110" cy="42" rx="10" ry="40" fill={ring} />
-      <ellipse cx="0" cy="42" rx="10" ry="40" fill="#2b3543" />
-      {indexOn && <circle cx="8" cy="6" r="5" fill={locked ? "#c1651f" : "#ffd591"} />}
+      <rect x="0" y="2" width="110" height="80" rx="9" fill={body} />
+      <rect x="0" y="2" width="110" height="10" rx="6" fill="#ffffff" opacity="0.07" />
+      {/* Zoomring */}
+      <rect x="16" y="0" width="34" height="84" rx="5" fill={ring} />
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        <rect key={i} x={19 + i * 4.3} y="3" width="2" height="78" rx="1" fill={riffel} />
+      ))}
+      {/* Fokusring */}
+      <rect x="58" y="4" width="24" height="76" rx="4" fill={ring} />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <rect key={i} x={60.5 + i * 4.4} y="7" width="1.6" height="70" rx="0.8" fill={riffel} />
+      ))}
+      <rect x="88" y="3" width="4" height="78" fill={band} />
+      {/* Frontlinse und Bajonett */}
+      <ellipse cx="110" cy="42" rx="10" ry="40" fill="#1b2027" />
+      <ellipse cx="110" cy="42" rx="7" ry="32" fill="#2c4a66" />
+      <path d="M 108 20 Q 114 30 112 44" stroke="#9cc6ea" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
+      <ellipse cx="0" cy="42" rx="9" ry="38" fill="#b9c1ca" />
+      <ellipse cx="0" cy="42" rx="6" ry="31" fill="#2b3543" />
+      {indexOn && <circle cx="8" cy="6" r="5" fill={locked ? "#c1651f" : "#ffd591"} stroke="#1e2530" strokeWidth="1" />}
+      {/* Etikett „neu“ / „alt“: Seit dem Usability-Test (B27) sind beide Objektive
+          auch auf der Ablage auseinanderzuhalten. */}
+      <g transform={`translate(70,42) rotate(${-spin})`}>
+        <rect x="-17" y="-9" width="34" height="18" rx="9" fill={tone === "old" ? "#f6f4f0" : "#e0b04f"} />
+        <text x="0" y="4" textAnchor="middle" fontSize="10.5" fontWeight="800" fill="#1e2530">
+          {tone === "old" ? "alt" : "neu"}
+        </text>
+      </g>
+    </g>
+  );
+}
+
+/**
+ * Kamerakörper im Stil der FX30 von der linken Seite: kompakte Box mit
+ * Oberteil und Zubehörschuh, eingeklapptem Display, Lüftungsschlitzen und
+ * Akkufach hinten. Das Display zeigt ein Livebild, solange die Kamera an ist –
+ * so ist der Schaltzustand auch ohne Beschriftung lesbar.
+ */
+function Kamerakoerper({ an }: { an: boolean }) {
+  return (
+    <g>
+      <defs>
+        <linearGradient id="ow-body" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#343d49" />
+          <stop offset="1" stopColor="#1b2129" />
+        </linearGradient>
+      </defs>
+      {/* Oberteil mit Zubehörschuh */}
+      <rect x="204" y="118" width="44" height="10" rx="2" fill="#4a5360" />
+      <rect x="196" y="126" width="96" height="28" rx="7" fill="#2b3340" />
+      {/* Gehäuse */}
+      <rect x="150" y="150" width="182" height="120" rx="15" fill="url(#ow-body)" />
+      <rect x="156" y="152" width="170" height="6" rx="3" fill="#ffffff" opacity="0.08" />
+      {/* Akkufach / Griffseite hinten */}
+      <rect x="150" y="196" width="40" height="74" rx="12" fill="#151a21" />
+      <rect x="158" y="208" width="4" height="50" rx="2" fill="#262d36" />
+      {/* Eingeklapptes Display */}
+      <rect x="198" y="164" width="84" height="58" rx="6" fill="#12161c" stroke="#3b4552" strokeWidth="2" />
+      {an ? (
+        <g>
+          <rect x="203" y="169" width="74" height="48" rx="3" fill="#8fbbd9" />
+          <rect x="203" y="197" width="74" height="20" rx="0" fill="#76a06a" />
+          <circle cx="252" cy="190" r="7" fill="#f2c9a5" />
+          <rect x="246" y="196" width="12" height="16" rx="3" fill="#e8743b" />
+          <circle cx="209" cy="175" r="2.5" fill="#e0553f" />
+        </g>
+      ) : (
+        <g>
+          <rect x="203" y="169" width="74" height="48" rx="3" fill="#232a33" />
+          <path d="M 212 214 L 238 172 L 250 172 L 224 214 Z" fill="#ffffff" opacity="0.05" />
+        </g>
+      )}
+      {/* Lüftungsschlitze vorn oben */}
+      {[0, 1, 2, 3].map((i) => (
+        <rect key={i} x="290" y={168 + i * 8} width="26" height="3.5" rx="1.75" fill="#12161c" />
+      ))}
+      <text x="292" y="232" fill="#7d8794" fontSize="10" fontWeight="700" letterSpacing="1.2">
+        FX30
+      </text>
+    </g>
+  );
+}
+
+/** Werkstatt-Hintergrund: Wand mit warmem Licht, Regal, Werkbank. Bleibt ruhig,
+ *  damit die anfassbaren Stellen davor die Aufmerksamkeit bekommen. */
+function Werkstatt() {
+  return (
+    <g aria-hidden>
+      <defs>
+        <linearGradient id="ow-wand" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f6eee2" />
+          <stop offset="1" stopColor="#ecdfcb" />
+        </linearGradient>
+        <radialGradient id="ow-licht" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#fffaf0" stopOpacity="0.95" />
+          <stop offset="1" stopColor="#fffaf0" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="ow-tisch" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#dcbc92" />
+          <stop offset="1" stopColor="#c99f6c" />
+        </linearGradient>
+      </defs>
+      <rect x={VIEW.x} y={VIEW.y} width={VIEW.w} height={VIEW.h} fill="url(#ow-wand)" />
+      <ellipse cx="300" cy="170" rx="230" ry="150" fill="url(#ow-licht)" />
+      {/* Regal oben rechts: Kamerakoffer und Tape */}
+      <rect x="548" y="74" width="160" height="7" rx="2" fill="#b98f62" />
+      <rect x="560" y="50" width="62" height="24" rx="5" fill="#3b4552" />
+      <rect x="582" y="45" width="18" height="6" rx="3" fill="#2b3340" />
+      <circle cx="652" cy="63" r="11" fill="#6aa1c7" />
+      <circle cx="652" cy="63" r="4.5" fill="#ecdfcb" />
+      <rect x="676" y="56" width="22" height="18" rx="3" fill="#e0b04f" />
+      {/* Werkbank */}
+      <rect x={VIEW.x} y="268" width={VIEW.w} height={VIEW.h - 218} fill="url(#ow-tisch)" />
+      <rect x={VIEW.x} y="266" width={VIEW.w} height="5" fill="#b88c5c" />
+      <path d={`M ${VIEW.x} 300 C 260 296, 330 306, 460 300 S 640 296, ${VIEW.x + VIEW.w} 302`} stroke="#c69b69" strokeWidth="1.5" fill="none" opacity="0.7" />
+      <path d={`M ${VIEW.x} 338 C 240 332, 360 344, 500 338 S 660 334, ${VIEW.x + VIEW.w} 340`} stroke="#bf9362" strokeWidth="1.5" fill="none" opacity="0.6" />
+    </g>
+  );
+}
+
+/** Neutrale Namen der anfassbaren Stellen. */
+const HOTSPOT_NAME: Record<HotspotId, string> = {
+  power: "Ein/Aus",
+  release: "Release-Knopf",
+  "rotate-ccw": "",
+  "rotate-cw": "",
+  hood: "Sonnenblende",
+  "front-cap-old": "vorderer Deckel",
+  "rear-cap-spare": "hinterer Deckel",
+  "front-cap-spare": "vorderer Deckel",
+  "old-lens": "altes Objektiv",
+  "spare-lens": "Wechselobjektiv",
+  sensor: "Sensor",
+};
+
+/**
+ * Wo das Namensschild einer markierten Stelle steht (SVG-Koordinaten). Von Hand
+ * je Zustand gesetzt, damit sich die Schilder in keinem der neun Schritte
+ * überdecken – im Browser für jeden Schritt nachgeprüft.
+ */
+function labelAt(
+  id: HotspotId,
+  scene: SceneState,
+  tilt: number,
+  shift: { x: number; y: number },
+): { x: number; y: number } | null {
+  const down = scene.tilt === "down";
+  switch (id) {
+    case "power": {
+      const p = att(221, 139, tilt, shift);
+      return down ? { x: p.x + 58, y: p.y } : { x: p.x, y: p.y - 40 };
+    }
+    case "release": {
+      const p = att(316, 256, tilt, shift);
+      return down ? { x: 186, y: p.y + 40 } : { x: p.x, y: p.y + 34 };
+    }
+    case "sensor": {
+      const p = att(MOUNT.x + 3, MOUNT.y, tilt, shift);
+      return { x: p.x, y: p.y + 44 };
+    }
+    case "hood": {
+      if (scene.hood === "tray") return { x: TRAY.hood.x, y: TRAY.hood.y + 32 };
+      const p = att(HOOD_AT.x, HOOD_AT.y, tilt, shift);
+      return { x: p.x + 6, y: p.y - 70 };
+    }
+    case "front-cap-old": {
+      if (scene.frontCapOld === "off") return { x: TRAY.frontCapOld.x, y: TRAY.frontCapOld.y - 50 };
+      const p = att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt, shift);
+      return { x: p.x, y: p.y + 62 };
+    }
+    case "rear-cap-spare":
+      if (scene.rearCapSpare === "spare") return { x: SAFE_SPARE.x, y: SAFE_SPARE.y - CAP_GAP - 30 };
+      if (scene.rearCapSpare === "tray") return { x: TRAY.rearCapSpare.x - 8, y: TRAY.rearCapSpare.y - 48 };
+      return null;
+    case "front-cap-spare": {
+      if (scene.spareLens === "safe") return { x: SAFE_SPARE.x, y: SAFE_SPARE.y + CAP_GAP + 34 };
+      const p = att(CAP_FRONT_AT.x, CAP_FRONT_AT.y, tilt, shift);
+      return { x: p.x, y: p.y - 56 };
+    }
+    case "old-lens":
+      return { x: LOOSE.x, y: LOOSE.y - 72 };
+    case "spare-lens":
+      return scene.spareLens === "safe" ? { x: SAFE_SPARE.x, y: SAFE_SPARE.y - 74 } : null;
+    default:
+      return null;
+  }
+}
+
+/** Namensschild einer markierten Stelle. Wandert mit, wenn sich die Szene bewegt. */
+function Namensschild({ x, y, text }: { x: number; y: number; text: string }) {
+  const w = text.length * 6.9 + 20;
+  return (
+    <g
+      aria-hidden
+      style={{
+        pointerEvents: "none",
+        transform: `translate(${x}px, ${y}px)`,
+        transformBox: "view-box",
+        transformOrigin: "0px 0px",
+        transition: "transform 520ms cubic-bezier(0.3,0,0.2,1)",
+      }}
+    >
+      <rect x={-w / 2} y={-11} width={w} height="22" rx="11" fill="#1e2530" opacity="0.9" stroke="#ffffff" strokeWidth="1.5" />
+      <text x="0" y="4.5" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="700">
+        {text}
+      </text>
     </g>
   );
 }
@@ -491,17 +682,17 @@ function Pulse({ cx = 0, cy = 0, rx, ry }: Hint) {
   const yr = ry ?? rx;
   return (
     <g style={{ pointerEvents: "none" }} aria-hidden>
-      <ellipse cx={cx} cy={cy} rx={rx} ry={yr} fill="none" stroke="#ffffff" strokeWidth={5} opacity={0.55} />
-      <ellipse cx={cx} cy={cy} rx={rx} ry={yr} fill="none" stroke="#c1651f" strokeWidth={2.5} />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={yr} fill="none" stroke="#ffffff" strokeWidth={6} opacity={0.7} />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={yr} fill="none" stroke="#c1651f" strokeWidth={3} strokeDasharray="7 4" />
       <motion.ellipse
         cx={cx}
         cy={cy}
         fill="none"
         stroke="#c1651f"
         strokeWidth={2.5}
-        initial={{ rx, ry: yr, opacity: 0.55 }}
-        animate={{ rx: rx + 11, ry: yr + 11, opacity: 0 }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+        initial={{ rx, ry: yr, opacity: 0.45 }}
+        animate={{ rx: rx + 9, ry: yr + 9, opacity: 0 }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
       />
     </g>
   );

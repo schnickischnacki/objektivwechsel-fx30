@@ -11,6 +11,34 @@ Fehlhandlungen (Kamera nach oben neigen, Sensor berühren, bei laufender Kamera
 Konsequenz, werden dann zurückgenommen – **kein harter Neustart**. Am Ende fasst
 der Abschlussscreen die Ausrutscher zusammen.
 
+## v3 – Mikro-Iteration nach dem Usability-Test (23.09.2026)
+
+Der Usability-Test (14./15.09.2026) lief mit dem Stand der Tags `usability-test-tp1`
+(TP1) und `usability-test-tp2-tp3` (TP2, TP3; nach der kleinen Korrektur aus TP1).
+Die überarbeitete Fassung liegt auf dem Zweig **`v3-nach-usability-test`**; `main`
+und damit die Live-Fassung im Kurs sind unverändert.
+
+| Befund aus dem Test | Änderung |
+|---|---|
+| B17 – Ausprobieren zählt als Fehler und steht auf der Urkunde; B10 – Zertifikat „zu leicht verdient" | **Fehler** (Sensor gefährdet: F1–F3) und **Umwege** (Griff war gerade nicht dran) getrennt. Umwege werden erklärt, zählen aber nicht. Das Zertifikat gibt es nur für einen Durchlauf ohne Fehler; Fehlerquote und Ausrutscher stehen nicht mehr darauf. |
+| TP3: „jetzt pulsiert ja nur das, deswegen wird das so richtig sein" | Jeder Handlungsschritt hat mindestens zwei markierte Stellen (neue Umwege in Schritt 1, 2 und 5). Ringe ruhiger (gestrichelt, langsamer Puls). |
+| TP3: „Ich weiß nicht, was dieses Licht hier ist"; TP1 las den Kreis am Sensor als Richtungswahl | Jede markierte Stelle trägt ein **neutrales Namensschild** (Ein/Aus, Release-Knopf, Sensor, vorderer Deckel …) – für richtige Griffe und Fallen gleich. |
+| B27 – Ablage und Fläche fürs Wechselobjektiv nicht unterscheidbar, Zweck des Aufräumens unklar | Werkbank mit Tuch (Objektive) und Schale „Deckel & Sonnenblende"; Objektive tragen „neu" / „alt"; Aufräum-Schritt nennt den Zweck. |
+| B08 – kein Zurück, um einen Schritt noch einmal anzusehen | **Schrittleiste** mit drei Abschnitten (Vorbereiten · Wechseln · Abschließen). Erledigte Schritte lassen sich als **Rückblick** öffnen: Bild im damaligen Zustand, was man gemacht hat und warum, Verweis in den Kurs. |
+| Orientierung (TP2: „nicht so gut gerafft, was eigentlich gerade los ist"), Aufgabentypen | Einführung mit dem Ablauf auf einen Blick; Aufgabenkarte neben dem Bild mit Typ „Im Bild handeln" / „Frage beantworten"; Fragen neben statt unter dem Bild. |
+| B16 / Kap. 7 – Übung als Abkürzung an den Abschnitten vorbei | Ergebnisanzeige und Rückblick verweisen je Punkt auf **Abschnitt 2c, Schritt N**. |
+| B22 – Schrift zu klein | Grundschrift 17 px statt 16 px; größere Bedienelemente. |
+| B13 – unklar, ob Website oder Hochschul-Tool | Kopfzeile „Übung zum Kurs Kameraschein · Modul 2"; Schlusszeile „Fenster schließen und im Kurs weitermachen". |
+| Zertifikat im Zoom-Setting nicht gefunden | Bestätigung „Gespeichert – die PDF liegt in deinem Download-Ordner". |
+
+Dazu die neue Darstellung: Werkstatt-Hintergrund, Kamera im Stil der FX30 (Display mit
+Livebild, solange sie an ist; Lüftung; silbernes Bajonett), Objektive mit Zoom- und
+Fokusring. Die Rückmeldung erscheint zusätzlich oben im Bild und blendet nach 4,5 s aus.
+
+**Nicht erneut getestet.** Die Fassung ist aus den Befunden abgeleitet und im Browser
+selbst geprüft (alle neun Schritte, Fehler- und Umweg-Pfade, Rückblick, Zertifikat,
+1280 und 375 px, `next build` ohne Fehler). Live geht sie erst mit einem Merge nach `main`.
+
 ## Setup
 
 ```bash
@@ -22,7 +50,8 @@ npm run build   # Produktionsbuild
 ## Deploy
 
 Vercel deployt automatisch bei jedem Push auf `main` (bestehendes Projekt, keine
-Env-Variablen). Redeploy prüfen: Vercel-Dashboard → Projekt → „Deployments" –
+Env-Variablen). Der Link im Kurs zeigt auf diese Adresse – ein Push auf `main` ändert
+also die Übung für alle, die sie im Kurs öffnen. Redeploy prüfen: Vercel-Dashboard → Projekt → „Deployments" –
 der oberste Eintrag muss den letzten Commit-Hash tragen.
 
 ## Einbindung in Moodle: per Link, kein iframe
@@ -48,11 +77,12 @@ voll bedienbar (Touch und Tastatur).
 | Situationen, Mikro-Check-Fragen, Feedback- und Konsequenztexte, Toleranzen | `data/beats.ts` |
 | Ablauf-/Konsequenz-Logik (rein, unit-testbar) | `lib/engine.ts` |
 | Szene (SVG, Zoom, anfassbare Stellen) | `components/Stage.tsx` |
-| Bestwert (`localStorage`, Key `objektivwechsel-fx30:v2`) | `lib/storage.ts` |
+| Bestwert (`localStorage`, Key `objektivwechsel-fx30:v3`) | `lib/storage.ts` |
 | Farben/Schriften (Tokens der Moodle-Inline-Seiten) | `app/globals.css` |
 
 Der Originalwortlaut der alten Kursseite steht in `data/beats.ts` als Kommentar
-über jeder Situation; UI-Texte kürzen nur, sie ändern nichts Inhaltliches.
+über jeder Situation; UI-Texte kürzen nur, sie ändern nichts Inhaltliches. Die
+Verweise „Abschnitt 2c, Schritt N" folgen der Schrittliste der Kursseite 2c (Stand 02.09.2026).
 
 ## Fachliche Grundlage
 
