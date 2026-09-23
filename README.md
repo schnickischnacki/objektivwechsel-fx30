@@ -15,8 +15,8 @@ der Abschlussscreen die Ausrutscher zusammen.
 
 Der Usability-Test (14./15.09.2026) lief mit dem Stand der Tags `usability-test-tp1`
 (TP1) und `usability-test-tp2-tp3` (TP2, TP3; nach der kleinen Korrektur aus TP1).
-Die überarbeitete Fassung liegt auf dem Zweig **`v3-nach-usability-test`**; `main`
-und damit die Live-Fassung im Kurs sind unverändert.
+Die überarbeitete Fassung ist seit dem 23.09.2026 auf `main` und damit live (der Zweig
+`v3-nach-usability-test` bleibt als Spur der Iteration).
 
 | Befund aus dem Test | Änderung |
 |---|---|
@@ -37,7 +37,12 @@ Fokusring. Die Rückmeldung erscheint zusätzlich oben im Bild und blendet nach 
 
 **Nicht erneut getestet.** Die Fassung ist aus den Befunden abgeleitet und im Browser
 selbst geprüft (alle neun Schritte, Fehler- und Umweg-Pfade, Rückblick, Zertifikat,
-1280 und 375 px, `next build` ohne Fehler). Live geht sie erst mit einem Merge nach `main`.
+1280 und 375 px, `next build` ohne Fehler) und nach dem Deploy auf der Live-Adresse
+durchgespielt. Die Einführung zeigt seit dem Deploy keine Schrittübersicht mehr.
+
+**„Bester Lauf auf diesem Gerät"** liegt nur im `localStorage` des Browsers (Schlüssel
+`objektivwechsel-fx30:v3`). Er wird nicht übertragen: andere Geräte sehen ihn nie;
+wer denselben Browser auf demselben Gerät nutzt, sieht ihn schon.
 
 ## Setup
 
