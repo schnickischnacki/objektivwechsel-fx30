@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
   ArrowRight,
-  Award,
   Check,
   CircleHelp,
   Hand,
@@ -612,7 +611,7 @@ function Einfuehrung({
   onStart: () => void;
   onNeu: () => void;
 }) {
-  const icons = { hand: Hand, frage: CircleHelp, umweg: Undo2, zertifikat: Award } as const;
+  const icons = { hand: Hand, frage: CircleHelp, umweg: Undo2 } as const;
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-[760px] items-center justify-center p-3 sm:p-6">
       <motion.section

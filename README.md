@@ -20,7 +20,7 @@ Die überarbeitete Fassung ist seit dem 23.09.2026 auf `main` und damit live (de
 
 | Befund aus dem Test | Änderung |
 |---|---|
-| B17 – Ausprobieren zählt als Fehler und steht auf der Urkunde; B10 – Zertifikat „zu leicht verdient" | **Fehler** (Sensor gefährdet: F1–F3) und **Umwege** (Griff war gerade nicht dran) getrennt. Umwege werden erklärt, zählen aber nicht. Das Zertifikat gibt es nur für einen Durchlauf ohne Fehler; Fehlerquote und Ausrutscher stehen nicht mehr darauf. |
+| B17 – Ausprobieren zählt als Fehler und steht auf der Urkunde; B10 – Zertifikat „zu leicht verdient" | **Fehler** (Sensor gefährdet: F1–F3) und **Umwege** (Griff war gerade nicht dran) getrennt. Umwege werden erklärt, zählen aber nicht. Das Zertifikat gab es danach nur für einen Durchlauf ohne Fehler; seit dem 24.09.2026 hat die Übung gar kein Zertifikat mehr (siehe unten). |
 | TP3: „jetzt pulsiert ja nur das, deswegen wird das so richtig sein" | Jeder Handlungsschritt hat mindestens zwei markierte Stellen (neue Umwege in Schritt 1, 2 und 5). Ringe ruhiger (gestrichelt, langsamer Puls). |
 | TP3: „Ich weiß nicht, was dieses Licht hier ist"; TP1 las den Kreis am Sensor als Richtungswahl | Jede markierte Stelle trägt ein **neutrales Namensschild** (Ein/Aus, Release-Knopf, Sensor, vorderer Deckel …) – für richtige Griffe und Fallen gleich. |
 | B27 – Ablage und Fläche fürs Wechselobjektiv nicht unterscheidbar, Zweck des Aufräumens unklar | Werkbank mit Tuch (Objektive) und Schale „Deckel & Sonnenblende"; Objektive tragen „neu" / „alt"; Aufräum-Schritt nennt den Zweck. |
@@ -29,14 +29,13 @@ Die überarbeitete Fassung ist seit dem 23.09.2026 auf `main` und damit live (de
 | B16 / Kap. 7 – Übung als Abkürzung an den Abschnitten vorbei | Ergebnisanzeige und Rückblick verweisen je Punkt auf **Abschnitt 2c, Schritt N**. |
 | B22 – Schrift zu klein | Grundschrift 17 px statt 16 px; größere Bedienelemente. |
 | B13 – unklar, ob Website oder Hochschul-Tool | Kopfzeile „Übung zum Kurs Kameraschein · Modul 2"; Schlusszeile „Fenster schließen und im Kurs weitermachen". |
-| Zertifikat im Zoom-Setting nicht gefunden | Bestätigung „Gespeichert – die PDF liegt in deinem Download-Ordner". |
 
 Dazu die neue Darstellung: Werkstatt-Hintergrund, Kamera im Stil der FX30 (Display mit
 Livebild, solange sie an ist; Lüftung; silbernes Bajonett), Objektive mit Zoom- und
 Fokusring. Die Rückmeldung erscheint zusätzlich oben im Bild und blendet nach 4,5 s aus.
 
 **Nicht erneut getestet.** Die Fassung ist aus den Befunden abgeleitet und im Browser
-selbst geprüft (alle neun Schritte, Fehler- und Umweg-Pfade, Rückblick, Zertifikat,
+selbst geprüft (alle neun Schritte, Fehler- und Umweg-Pfade, Rückblick,
 1280 und 375 px, `next build` ohne Fehler) und nach dem Deploy auf der Live-Adresse
 durchgespielt. Die Einführung zeigt seit dem Deploy keine Schrittübersicht mehr.
 
@@ -111,3 +110,10 @@ Detailreihenfolge innerhalb einer Phase.
   nichts über ein Zurückneigen, deshalb wurde nichts erfunden.
 - Alte Listen-Version: als Git-Tag `v1-listen-sortierung` und physisch unter
   `../Backups/objektivwechsel-fx30_v1_listen-sortierung_2026-07-17/` gesichert.
+
+## 24.09.2026: kein Zertifikat mehr in der Übung
+
+Entscheidung Niklas: Ein Zertifikat erzeugt der Kurs nur noch am Ende von Modul 5
+(Moodle-Zertifikat). Die Übung zeigt am Ende weiter Fehler, Umwege, Zeit und den besten
+Lauf auf diesem Gerät, aber keinen Namen und kein PDF mehr. Entfernt: Zertifikat-Block
+im Ergebnis, Hinweis auf der Startkarte, `lib/certificate.ts`, Abhängigkeit `jspdf`.

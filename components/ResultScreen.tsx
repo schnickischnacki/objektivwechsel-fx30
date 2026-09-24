@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
-import { Award, Check, Download, RotateCcw, TriangleAlert, Undo2 } from "lucide-react";
+import { RotateCcw, TriangleAlert, Undo2 } from "lucide-react";
 import { beats, trapNachlesen, type TrapId } from "@/data/beats";
-import { downloadCertificate } from "@/lib/certificate";
 import { fehler, umwege, type Slip } from "@/lib/engine";
 import type { BestResult } from "@/lib/storage";
 
@@ -12,6 +10,8 @@ import type { BestResult } from "@/lib/storage";
  * Abschlusskarte. Seit der Mikro-Iteration nach dem Usability-Test trennt sie
  * Fehler (Sensor gefährdet) von Umwegen (Griff war gerade nicht dran) und
  * verweist bei jedem Punkt auf die Stelle im Kurs, an der er steht (B16, B17).
+ * Ein Zertifikat gibt es in der Übung seit dem 24.09.2026 nicht mehr; das einzige
+ * Zertifikat des Kurses steht am Ende von Modul 5.
  */
 export default function ResultScreen({
   slips,
@@ -27,21 +27,6 @@ export default function ResultScreen({
   const f = fehler(slips);
   const u = umwege(slips);
   const sauber = f.length === 0;
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [gespeichert, setGespeichert] = useState(false);
-
-  async function onCertificate() {
-    if (!name.trim() || busy || !sauber) return;
-    setBusy(true);
-    try {
-      await downloadCertificate({ name: name.trim(), seconds });
-      setGespeichert(true);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   // Gleiche Hinweise nur einmal zeigen
   const einmal = (liste: Slip[]) => {
     const gesehen = new Set<string>();
@@ -68,7 +53,7 @@ export default function ResultScreen({
         <p className="mb-5 max-w-[60ch] text-text-muted">
           {sauber
             ? "Genau diesen Ablauf führst du in der Prüfung vor. Umwege sind Griffe, die gerade nicht dran waren – sie zählen nicht als Fehler."
-            : "Unten steht, wo es gefährlich wurde und wo du es im Kurs nachlesen kannst. Das Zertifikat gibt es für einen Durchlauf ohne Fehler."}
+            : "Unten steht, wo es gefährlich wurde und wo du es im Kurs nachlesen kannst."}
         </p>
 
         <dl className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -91,57 +76,6 @@ export default function ResultScreen({
             punkte={einmal(u).map((s) => ({ text: s.text, wo: beats[s.beatIndex]?.nachlesen }))}
           />
         )}
-
-        {/* Zertifikat: nur für einen Durchlauf ohne Fehler. Der Name landet nur in der PDF. */}
-        <div className={["mb-6 rounded-xl border p-4", sauber ? "border-ok-line bg-ok-bg" : "border-line bg-cream"].join(" ")}>
-          <p className="mb-1 flex items-center gap-1.5 text-[0.75rem] font-bold uppercase tracking-[0.12em] text-text-muted">
-            <Award size={15} aria-hidden /> Zertifikat
-          </p>
-          {sauber ? (
-            <>
-              <p className="mb-3 max-w-[60ch] text-[0.92rem] text-text">
-                Trag deinen Namen ein und lade dein Zertifikat mit Bearbeitungszeit herunter. Der Name landet nur in der
-                PDF – er wird weder gespeichert noch übertragen.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <label className="sr-only" htmlFor="cert-name">
-                  Name für das Zertifikat
-                </label>
-                <input
-                  id="cert-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setGespeichert(false);
-                  }}
-                  placeholder="Vor- und Nachname"
-                  autoComplete="name"
-                  className="min-h-[48px] flex-1 basis-52 rounded-xl border border-line bg-white px-4 placeholder:text-text-muted/60"
-                />
-                <button
-                  type="button"
-                  disabled={!name.trim() || busy}
-                  onClick={onCertificate}
-                  className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-ok px-5 font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Download size={18} aria-hidden />
-                  {busy ? "Wird erstellt …" : "Zertifikat als PDF"}
-                </button>
-              </div>
-              {gespeichert && (
-                <p role="status" className="mt-2 flex items-center gap-1.5 text-[0.88rem] font-semibold text-ok">
-                  <Check size={16} aria-hidden /> Gespeichert – die PDF liegt in deinem Download-Ordner.
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="max-w-[60ch] text-[0.92rem] text-text-muted">
-              Noch nicht: Das Zertifikat bekommst du für einen Durchlauf, in dem der Sensor nie in Gefahr war. Umwege
-              sind dabei erlaubt.
-            </p>
-          )}
-        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button

@@ -162,7 +162,6 @@ export const intro = {
     { icon: "hand", text: "Bei den meisten Schritten handelst du im Bild. Markiert ist alles, was du anfassen kannst – nicht nur das Richtige." },
     { icon: "frage", text: "Zwei Schritte sind kurze Fragen. Du beantwortest sie neben dem Bild." },
     { icon: "umweg", text: "Ein Griff, der nur gerade nicht dran ist, ist ein Umweg und zählt nicht." },
-    { icon: "zertifikat", text: "Das Zertifikat gibt es für einen Durchlauf ohne Fehler." },
   ],
   cta: "Übung starten",
 };
@@ -479,7 +478,7 @@ export const TOTAL_BEATS = beats.length;
 
 /**
  * Pflicht-Handgriffe eines sauberen Durchlaufs: alle Griffe plus je eine
- * Entscheidung pro Mikro-Check. Bezugsgröße für die Fehlerquote im Zertifikat.
+ * Entscheidung pro Mikro-Check.
  */
 export const TOTAL_ACTIONS = beats.reduce(
   (n, b) => n + (b.kind === "grip" ? b.targets.length : 1),

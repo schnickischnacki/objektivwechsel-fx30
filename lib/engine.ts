@@ -11,7 +11,7 @@ import {
 
 /**
  * Zwei Sorten von Abweichungen (Mikro-Iteration nach dem Usability-Test):
- *  - F1–F3 sind **Fehler**: Sie gefährden den Sensor. Nur sie entscheiden über das Zertifikat.
+ *  - F1–F3 sind **Fehler**: Sie gefährden den Sensor. Nur sie zählen in der Ergebnisanzeige.
  *  - "K" ist ein **Umweg**: ein Griff, der gerade nicht dran war, oder eine halbrichtige
  *    Wahl. Umwege werden gezeigt und erklärt, zählen aber nicht als Fehler.
  * Vorher zählte beides gleich als „Ausrutscher" (seit 14.09.2026, Befund B14); TP2 und
