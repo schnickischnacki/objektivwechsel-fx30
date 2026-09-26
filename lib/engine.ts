@@ -3,6 +3,7 @@ import {
   beats,
   initialScene,
   type Beat,
+  type Etikett,
   type HotspotId,
   type SceneState,
   type TrapId,
@@ -13,7 +14,8 @@ import {
  * Zwei Sorten von Abweichungen (Mikro-Iteration nach dem Usability-Test):
  *  - F1–F3 sind **Fehler**: Sie gefährden den Sensor. Nur sie zählen in der Ergebnisanzeige.
  *  - "K" ist ein **Umweg**: ein Griff, der gerade nicht dran war, oder eine halbrichtige
- *    Wahl. Umwege werden gezeigt und erklärt, zählen aber nicht als Fehler.
+ *    Wahl. Umwege werden gezeigt und erklärt, zählen aber nicht als Fehler. In der
+ *    Rückmeldung tragen sie ein Etikett, das zur Situation passt (siehe `Etikett`).
  * Vorher zählte beides gleich als „Ausrutscher" (seit 14.09.2026, Befund B14); TP2 und
  * TP3 lasen das als Strafe fürs Ausprobieren (B17).
  */
@@ -46,7 +48,7 @@ export type GameState = {
 
 export type Reaction =
   | { type: "ok"; text: string; beatDone: boolean }
-  | { type: "correction"; text: string }
+  | { type: "correction"; etikett: Etikett; text: string }
   /** consequence: Szenenzustand, der die Folge kurz zeigt, bevor zurückgenommen wird */
   | { type: "trap"; trap: TrapId; text: string; consequence: SceneState }
   | { type: "idle" };
@@ -158,8 +160,8 @@ export function grip(s: GameState, hotspot: HotspotId): [GameState, Reaction] {
   const correction = activeCorrections(s).find((c) => c.hotspot === hotspot);
   if (correction) {
     return [
-      { ...s, slips: [...s.slips, { trap: "K", text: correction.text, beatIndex: s.beatIndex }], startedAt },
-      { type: "correction", text: correction.text },
+      { ...s, slips: [...s.slips, { trap: "K", text: `${correction.etikett}: ${correction.text}`, beatIndex: s.beatIndex }], startedAt },
+      { type: "correction", etikett: correction.etikett, text: correction.text },
     ];
   }
 
@@ -193,8 +195,8 @@ export function choose(s: GameState, optionIndex: number): [GameState, Reaction]
 
   if (option.verdict === "soft") {
     return [
-      { ...s, slips: [...s.slips, { trap: "K", text: option.text, beatIndex: s.beatIndex }], startedAt },
-      { type: "correction", text: option.text },
+      { ...s, slips: [...s.slips, { trap: "K", text: `${option.etikett ?? "Daneben"}: ${option.text}`, beatIndex: s.beatIndex }], startedAt },
+      { type: "correction", etikett: option.etikett ?? "Daneben", text: option.text },
     ];
   }
 

@@ -347,7 +347,7 @@ function Schrittleiste({
           <p className="px-1.5 pb-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-text-muted">
             {phaseTitle[phase]}
           </p>
-          <ol className="flex flex-wrap gap-1.5">
+          <ol className="flex flex-wrap gap-1">
             {beats.map((b, i) => {
               if (b.phase !== phase) return null;
               const done = i < state.beatIndex;
@@ -363,7 +363,7 @@ function Schrittleiste({
                     aria-label={`Schritt ${i + 1}: ${b.title}${done ? " – erledigt, noch einmal ansehen" : current ? " – jetzt dran" : ""}`}
                     title={done ? "Noch einmal ansehen" : undefined}
                     className={[
-                      "flex min-h-[44px] w-full items-center gap-1.5 rounded-xl border px-1.5 text-left text-[0.76rem] font-semibold leading-tight transition-colors",
+                      "flex min-h-[44px] w-full items-center gap-1 rounded-xl border py-1 pl-1 pr-2 text-left text-[0.74rem] font-semibold leading-tight transition-colors",
                       current
                         ? "border-ink bg-ink text-white"
                         : viewing
@@ -375,7 +375,7 @@ function Schrittleiste({
                   >
                     <span
                       className={[
-                        "relative grid h-6 w-6 shrink-0 place-items-center rounded-full text-[0.72rem] font-bold",
+                        "relative grid h-5 w-5 shrink-0 place-items-center rounded-full text-[0.68rem] font-bold",
                         current ? "bg-accent text-white" : done ? "bg-ok text-white" : "bg-white text-text-muted",
                       ].join(" ")}
                     >
@@ -389,7 +389,7 @@ function Schrittleiste({
                         </span>
                       )}
                     </span>
-                    <span className="hidden min-w-0 md:inline">{b.short}</span>
+                    <span className="hidden min-w-0 hyphens-auto break-words md:inline">{b.short}</span>
                   </button>
                 </li>
               );
@@ -516,14 +516,14 @@ function Aufgabenkarte({
           <b className={fehlerBisher ? "text-danger" : "text-text"}>{fehlerBisher}</b> Fehler bisher
         </span>
         <span>
-          <b className="text-text">{umwegeBisher}</b> {umwegeBisher === 1 ? "Umweg" : "Umwege"} (zählen nicht)
+          <b className="text-text">{umwegeBisher}</b> {umwegeBisher === 1 ? "Umweg (zählt nicht)" : "Umwege (zählen nicht)"}
         </span>
       </p>
     </motion.section>
   );
 }
 
-/** Eine Rückmeldung in drei Tönen: richtig, Umweg, Fehler. */
+/** Eine Rückmeldung in drei Tönen: richtig, Umweg (mit Etikett zur Situation), Fehler. */
 function Rueckmeldung({ reaction, kompakt = false }: { reaction: Reaction; kompakt?: boolean }) {
   if (reaction.type === "idle") return null;
   const art = reaction.type === "trap" ? "fehler" : reaction.type === "correction" ? "umweg" : "ok";
@@ -534,7 +534,7 @@ function Rueckmeldung({ reaction, kompakt = false }: { reaction: Reaction; kompa
         ? "border-warn-line bg-warn-bg text-warn"
         : "border-ok-line bg-ok-bg text-ok";
   const Icon = art === "fehler" ? TriangleAlert : art === "umweg" ? Undo2 : Check;
-  const etikett = art === "fehler" ? "Fehler" : art === "umweg" ? "Umweg" : "Richtig";
+  const etikett = reaction.type === "trap" ? "Fehler" : reaction.type === "correction" ? reaction.etikett : "Richtig";
   const zusatz = art === "fehler" ? " Die Handlung wird zurückgenommen – weiter geht’s korrekt." : "";
   const text = art === "ok" ? reaction.text.replace(/^Richtig\.\s*/, "") : reaction.text;
   return (

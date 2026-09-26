@@ -52,7 +52,7 @@ export default function ResultScreen({
         </h2>
         <p className="mb-5 max-w-[60ch] text-text-muted">
           {sauber
-            ? "Genau diesen Ablauf führst du in der Prüfung vor. Umwege sind Griffe, die gerade nicht dran waren – sie zählen nicht als Fehler."
+            ? "Genau diesen Ablauf führst du in der Prüfung vor. Umwege sind Griffe und Antworten, die zu früh, in die falsche Richtung oder knapp daneben waren – sie zählen nicht als Fehler."
             : "Unten steht, wo es gefährlich wurde und wo du es im Kurs nachlesen kannst."}
         </p>
 

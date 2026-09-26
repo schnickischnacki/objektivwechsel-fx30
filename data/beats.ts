@@ -87,8 +87,15 @@ export type Target = {
   apply: (s: SceneState) => SceneState;
 };
 
+/**
+ * Etikett einer Korrektur in der Rückmeldung. Seit 26.09.2026 passend zur
+ * Situation statt pauschal „Umweg“; gezählt werden alle weiter als Umweg.
+ */
+export type Etikett = "Noch nicht" | "Noch verriegelt" | "Bleibt drauf" | "Falsche Richtung" | "Fast" | "Daneben";
+
 export type Correction = {
   hotspot: HotspotId;
+  etikett: Etikett;
   text: string;
   /** Nur anfassbar, wenn das physisch überhaupt geht (z. B. drehen erst nach Entriegeln). */
   when?: (s: SceneState) => boolean;
@@ -118,6 +125,8 @@ export type Option = {
   /** Vorschau-Zustand, solange die Option angetippt/fokussiert ist */
   preview: (s: SceneState) => SceneState;
   verdict: "ok" | "soft" | "trap";
+  /** Nur bei verdict "soft" */
+  etikett?: Etikett;
   trap?: TrapId;
   text: string;
 };
@@ -161,7 +170,7 @@ export const intro = {
   how: [
     { icon: "hand", text: "Bei den meisten Schritten handelst du im Bild. Markiert ist alles, was du anfassen kannst – nicht nur das Richtige." },
     { icon: "frage", text: "Zwei Schritte sind kurze Fragen. Du beantwortest sie neben dem Bild." },
-    { icon: "umweg", text: "Ein Griff, der nur gerade nicht dran ist, ist ein Umweg und zählt nicht." },
+    { icon: "umweg", text: "Was nur zu früh, in die falsche Richtung oder knapp daneben ist, ist ein Umweg und zählt nicht." },
   ],
   cta: "Übung starten",
 };
@@ -192,6 +201,7 @@ export const beats: Beat[] = [
     corrections: [
       {
         hotspot: "hood",
+        etikett: "Noch nicht",
         text: "Erst die Kamera aus – um das Objektiv kümmerst du dich danach.",
       },
     ],
@@ -225,7 +235,8 @@ export const beats: Beat[] = [
     corrections: [
       {
         hotspot: "release",
-        text: "Noch nicht öffnen – erst Sonnenblende ab und Deckel zu, dann das Wechselobjektiv vorbereiten. So bleibt der Body nur kurz offen.",
+        etikett: "Noch nicht",
+        text: "Erst Sonnenblende ab und Deckel zu, dann das Wechselobjektiv vorbereiten. So bleibt der Body nur kurz offen.",
       },
     ],
   },
@@ -254,11 +265,13 @@ export const beats: Beat[] = [
     corrections: [
       {
         hotspot: "front-cap-spare",
-        text: "Der vordere Deckel bleibt vorerst drauf – er schützt die Frontlinse, bis das Objektiv sitzt. Ganz zum Schluss kommt er ab.",
+        etikett: "Bleibt drauf",
+        text: "Der vordere Deckel schützt die Frontlinse, bis das Objektiv sitzt. Ganz zum Schluss kommt er ab.",
       },
       {
         hotspot: "front-cap-old",
-        text: "Der bleibt zu – er schützt die Frontlinse des alten Objektivs bis zur sicheren Ablage.",
+        etikett: "Bleibt drauf",
+        text: "Dieser Deckel schützt die Frontlinse des alten Objektivs bis zur sicheren Ablage.",
       },
     ],
   },
@@ -287,6 +300,7 @@ export const beats: Beat[] = [
         label: "Waagrecht",
         preview: (s) => ({ ...s, tilt: "level" }),
         verdict: "soft",
+        etikett: "Fast",
         text: "Besser als nach oben – aber Staub schwebt weiter in die Öffnung.",
       },
       {
@@ -327,19 +341,22 @@ export const beats: Beat[] = [
     corrections: [
       {
         hotspot: "rotate-cw",
-        text: "Falsche Richtung: Nach rechts wird festgemacht, gelöst wird nach links.",
+        etikett: "Falsche Richtung",
+        text: "Nach rechts wird festgemacht, gelöst wird nach links.",
         when: (s) => s.release,
       },
       // Vor dem Entriegeln lassen sich beide Drehrichtungen schon anfassen – das
       // Objektiv sitzt dann aber noch fest.
       {
         hotspot: "rotate-ccw",
-        text: "Das Objektiv ist noch verriegelt – erst den Release-Knopf drücken.",
+        etikett: "Noch verriegelt",
+        text: "Erst den Release-Knopf drücken, dann lässt sich das Objektiv drehen.",
         when: (s) => !s.release,
       },
       {
         hotspot: "rotate-cw",
-        text: "Das Objektiv ist noch verriegelt – erst den Release-Knopf drücken.",
+        etikett: "Noch verriegelt",
+        text: "Erst den Release-Knopf drücken, dann lässt sich das Objektiv drehen.",
         when: (s) => !s.release,
       },
     ],
@@ -387,12 +404,14 @@ export const beats: Beat[] = [
         label: "Einfach ansetzen und drehen, bis es fasst",
         preview: (s) => s,
         verdict: "soft",
+        etikett: "Daneben",
         text: "Ohne Index-Punkt greift das Bajonett nicht – und der Body steht länger offen als nötig.",
       },
       {
         label: "Am roten Aufnahmeknopf",
         preview: (s) => s,
         verdict: "soft",
+        etikett: "Daneben",
         text: "Der Aufnahmeknopf hat mit dem Bajonett nichts zu tun. Ausgerichtet wird am Index-Punkt.",
       },
     ],
@@ -432,7 +451,8 @@ export const beats: Beat[] = [
     corrections: [
       {
         hotspot: "rotate-ccw",
-        text: "Falsche Richtung – so löst du es wieder. Festgemacht wird nach rechts.",
+        etikett: "Falsche Richtung",
+        text: "So löst du es wieder. Festgemacht wird nach rechts.",
         // Drehen geht erst, wenn das Objektiv angesetzt ist.
         when: (s) => s.spareLens !== "safe",
       },
